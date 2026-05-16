@@ -508,22 +508,6 @@
       padding: 4px;
     }
 
-    /* ── 5エネルギー ── */
-    .energy-section { margin-bottom: 14px; }
-    .energy-label {
-      font-size: 12px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 6px;
-      display: inline-block;
-      margin-bottom: 8px;
-    }
-    .energy-katsu { background: #fff0d8; color: #c08030; }
-    .energy-ryu   { background: #d8eeff; color: #3080c0; }
-    .energy-en    { background: #ffe8d8; color: #c05030; }
-    .energy-sei   { background: #d8f0e8; color: #30a060; }
-    .energy-raku  { background: #fde8f0; color: #b5708a; }
-
     /* ── 比較ビュー ── */
     .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .compare-side { text-align: center; }
@@ -1149,14 +1133,6 @@ function toggleTag(el) {
   el.classList.toggle('active');
 }
 
-// ── 単一選択タグ（お湯加減・力加減など）──
-function selectOneTag(el, groupId) {
-  document.querySelectorAll(`#${groupId} .tag`).forEach(t => {
-    t.classList.remove('selected', 'active');
-  });
-  el.classList.add('selected', 'active');
-}
-
 // ── 写真アップロード ──
 function triggerUpload(inputId) {
   document.getElementById(inputId).click();
@@ -1175,17 +1151,9 @@ function previewPhoto(inputId, previewId, placeholderId) {
 }
 
 // ── 記録ページ ──
-const scoreKeys = ['volume','strength','shine','baby-hair','scalp'];
+const scoreKeys = ['sebum','dryness','redness','pores','dandruff','itch','volume','strength','shine','baby-hair'];
 function initScoreDots() {
   scoreKeys.forEach(k => createScoreDots('score-' + k));
-}
-
-function getTagValues(id) {
-  return [...document.querySelectorAll(`#${id} .tag.selected, #${id} .tag.active`)].map(t => t.textContent.trim());
-}
-
-function resetAllTags() {
-  document.querySelectorAll('.tag').forEach(t => t.classList.remove('selected','active'));
 }
 
 function onSelectRecordClient() {
@@ -1193,14 +1161,12 @@ function onSelectRecordClient() {
   document.getElementById('record-form').style.display = val ? 'block' : 'none';
   document.getElementById('visit-date').value = new Date().toISOString().slice(0,10);
   scoreKeys.forEach(k => setScore('score-' + k, 0));
+  // 写真リセット
   ['scalp-preview','hair-preview'].forEach(id => { document.getElementById(id).style.display='none'; document.getElementById(id).src=''; });
   ['scalp-placeholder','hair-placeholder'].forEach(id => document.getElementById(id).style.display='');
   document.getElementById('staff-memo').value = '';
   document.getElementById('client-voice').value = '';
-  document.getElementById('other-request').value = '';
-  document.getElementById('mood-slider').value = 5;
-  document.getElementById('mood-val').textContent = '5';
-  resetAllTags();
+  document.querySelectorAll('#scalp-type-tags .tag, #treatment-tags .tag').forEach(t => { t.classList.remove('selected'); t.classList.remove('active'); });
 }
 
 function saveRecord() {
@@ -1215,31 +1181,12 @@ function saveRecord() {
     clientId,
     date: document.getElementById('visit-date').value,
     scalpPhoto: scalpImgEl.style.display !== 'none' ? scalpImgEl.src : null,
-    hairPhoto:  hairImgEl.style.display  !== 'none' ? hairImgEl.src  : null,
-    // 基本事項
-    effects:     getTagValues('effect-tags'),
-    colorPerm:   getTagValues('color-perm-tags')[0] || '',
-    waterTemp:   getTagValues('water-temp-tags')[0] || '',
-    pressure:    getTagValues('pressure-tags')[0] || '',
-    menthol:     getTagValues('menthol-tags')[0] || '',
-    talkPref:    getTagValues('talk-tags')[0] || '',
-    mood:        document.getElementById('mood-slider').value,
-    // チェック項目
-    scalpCheck:  getTagValues('scalp-check-tags'),
-    hairCheck:   getTagValues('hair-check-tags'),
-    // 5エネルギー
-    energyKatsu: getTagValues('energy-katsu-tags'),
-    energyRyu:   getTagValues('energy-ryu-tags'),
-    energyEn:    getTagValues('energy-en-tags'),
-    energySei:   getTagValues('energy-sei-tags'),
-    energyRaku:  getTagValues('energy-raku-tags'),
-    // 施術・スコア
-    treatments:  getTagValues('treatment-tags'),
-    scores:      Object.fromEntries(scoreKeys.map(k => [k, getScore('score-' + k)])),
-    // メモ
-    otherRequest: document.getElementById('other-request').value.trim(),
-    staffMemo:    document.getElementById('staff-memo').value.trim(),
-    clientVoice:  document.getElementById('client-voice').value.trim(),
+    hairPhoto: hairImgEl.style.display !== 'none' ? hairImgEl.src : null,
+    scores: Object.fromEntries(scoreKeys.map(k => [k, getScore('score-' + k)])),
+    scalpTypes: [...document.querySelectorAll('#scalp-type-tags .tag.selected, #scalp-type-tags .tag.active')].map(t => t.textContent),
+    treatments: [...document.querySelectorAll('#treatment-tags .tag.selected, #treatment-tags .tag.active')].map(t => t.textContent),
+    staffMemo: document.getElementById('staff-memo').value.trim(),
+    clientVoice: document.getElementById('client-voice').value.trim(),
   };
 
   db.records.push(record);
