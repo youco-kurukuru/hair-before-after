@@ -641,8 +641,20 @@
       <button class="btn btn-secondary btn-sm" onclick="undoMarker()" style="margin-bottom:12px;">↩ 最後のマーカーを消す</button>
     </div>
 
-    <!-- 変化タグ選択 -->
-    <div id="change-tag-area" style="display:none; margin-bottom:4px;">
+    <!-- AI分析 / タグ選択 -->
+    <div id="ai-analyze-area" style="display:none; margin-bottom:4px;"></div>
+  </div>
+
+  <!-- APIキー設定モーダル -->
+  <div id="apikey-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h2 style="font-size:16px;font-weight:700;margin-bottom:8px;">🔑 Claude APIキー設定</h2>
+      <p style="font-size:12px;color:#888;margin-bottom:12px;">一度入力すれば保存されます。</p>
+      <label>APIキー（sk-ant-...）</label>
+      <input type="password" id="apikey-input" placeholder="sk-ant-api03-..." style="font-size:13px;">
+      <button class="btn btn-primary" onclick="saveApiKey()" style="margin-bottom:8px;">保存して分析開始</button>
+      <button class="btn btn-secondary" onclick="closeApiKeyModal()">キャンセル</button>
     </div>
   </div>
 
@@ -1448,61 +1460,147 @@ function printReport() {
   window.print();
 }
 
-// ── 変化タグ選択パネル ──
-const CHANGE_TAGS = {
-  '🌱 育毛・発毛': [
-    'うぶ毛が増えてきた',
-    'ボリュームが出てきた',
-    '生え際が整ってきた',
-    '分け目が目立たなくなった',
-    '抜け毛が減った',
-  ],
-  '💆 頭皮': [
-    '頭皮がスッキリした',
-    '毛穴の詰まりが改善',
-    '頭皮の赤みが落ち着いた',
-    '油分バランスが整った',
-    'かゆみが落ち着いた',
-    '頭皮のニオイが改善',
-  ],
-  '✨ 髪質': [
-    'ツヤとハリが出た',
-    'パサつきが改善された',
-    'まとまりやすくなった',
-    '手触りがやわらかくなった',
-    '広がりが落ち着いた',
-    'しなやかさが増した',
-  ],
-};
+// ── 使用量トラッキング ──
+const COST_PER_ANALYSIS = 0.005; // 1回あたり推定$0.005（保守的な見積もり）
+const WARN_THRESHOLD    = 4.0;   // $4 で警告
+const STOP_THRESHOLD    = 4.8;   // $4.8 で停止警告
 
-function renderChangeTagPanel() {
-  const area = document.getElementById('change-tag-area');
-  let html = `<div class="card">
-    <div class="card-title">✨ 注目ポイントを選ぶ</div>
-    <p style="font-size:12px;color:#aaa;margin-bottom:12px;">タップすると注目ポイントに追加されます</p>`;
+function getUsageCount() { return parseInt(localStorage.getItem('aiUsageCount') || '0'); }
+function addUsageCount()  { localStorage.setItem('aiUsageCount', getUsageCount() + 1); }
+function getEstimatedCost() { return (getUsageCount() * COST_PER_ANALYSIS).toFixed(3); }
 
-  for (const [cat, tags] of Object.entries(CHANGE_TAGS)) {
-    html += `<p style="font-size:12px;font-weight:700;color:#b5708a;margin-bottom:6px;">${cat}</p>
-    <div class="tags" style="margin-bottom:12px;">
-      ${tags.map(t => `<span class="tag change-suggest-tag" onclick="addChangeTag('${t}')">${t}</span>`).join('')}
+function renderUsageBadge() {
+  const count = getUsageCount();
+  const cost  = getEstimatedCost();
+  const remaining = (5 - cost).toFixed(2);
+  const pct   = Math.min(100, (cost / 5) * 100).toFixed(0);
+  const color = cost >= WARN_THRESHOLD ? '#e85555' : cost >= 3 ? '#e8a030' : '#5aaa7a';
+
+  const area = document.getElementById('ai-analyze-area');
+  const badge = document.getElementById('usage-badge');
+  const html = `
+    <div id="usage-badge" style="background:white;border-radius:10px;padding:10px 14px;margin-top:8px;box-shadow:0 1px 6px rgba(0,0,0,0.08);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:12px;color:#888;">AI分析 使用状況</span>
+        <span style="font-size:12px;font-weight:700;color:${color};">残り 推定 $${remaining}</span>
+      </div>
+      <div style="height:6px;background:#f0d8e8;border-radius:3px;overflow:hidden;">
+        <div style="width:${pct}%;height:100%;background:${color};border-radius:3px;transition:width 0.4s;"></div>
+      </div>
+      <p style="font-size:10px;color:#bbb;margin-top:4px;text-align:right;">
+        ${count}回使用 / 推定 $${cost} 消費（$5上限）
+      </p>
+      ${cost >= WARN_THRESHOLD ? `<p style="font-size:12px;color:#e85555;font-weight:700;margin-top:4px;">⚠️ 残高が少なくなっています。追加チャージをご検討ください。</p>` : ''}
     </div>`;
-  }
-  html += `</div>`;
-  area.innerHTML = html;
+
+  if (badge) badge.outerHTML = html;
+  else area.insertAdjacentHTML('beforeend', html);
 }
 
-function addChangeTag(text) {
-  const list = document.getElementById('ba-points-list');
-  const count = list.querySelectorAll('.point-row').length;
-  if (count >= 5) { alert('最大5つまでです'); return; }
-  addPointRow(count + 1);
-  const inputs = list.querySelectorAll('.point-input');
-  inputs[inputs.length - 1].value = text;
-  generateLine();
-  // 選んだタグをグレーアウト
-  document.querySelectorAll('.change-suggest-tag').forEach(el => {
-    if (el.textContent === text) el.style.opacity = '0.35';
-  });
+function renderAIPanel() {
+  const area = document.getElementById('ai-analyze-area');
+  area.innerHTML = `
+    <div class="card">
+      <div class="card-title">🤖 AI 変化分析</div>
+      <p style="font-size:12px;color:#aaa;margin-bottom:12px;">写真をAIが比較して注目ポイントを自動入力します</p>
+      <button class="btn btn-primary" onclick="analyzeWithAI()" id="ai-btn">✨ AIで変化を自動分析する</button>
+    </div>`;
+  renderUsageBadge();
+}
+
+// ── APIキー管理 ──
+function openApiKeyModal() {
+  document.getElementById('apikey-input').value = localStorage.getItem('claudeApiKey') || '';
+  document.getElementById('apikey-modal').classList.add('open');
+}
+function closeApiKeyModal() {
+  document.getElementById('apikey-modal').classList.remove('open');
+}
+function saveApiKey() {
+  const key = document.getElementById('apikey-input').value.trim();
+  if (!key) { alert('APIキーを入力してください'); return; }
+  localStorage.setItem('claudeApiKey', key);
+  closeApiKeyModal();
+  runAnalysis();
+}
+
+// ── AI分析 ──
+async function analyzeWithAI() {
+  const cost = parseFloat(getEstimatedCost());
+  if (cost >= STOP_THRESHOLD) {
+    alert(`⚠️ 推定使用額が $${cost} に達しました。\n$5の上限に近いため、Anthropic Console で残高をご確認ください。\nhttps://console.anthropic.com/settings/billing`);
+    return;
+  }
+  if (!localStorage.getItem('claudeApiKey')) { openApiKeyModal(); return; }
+  runAnalysis();
+}
+
+async function runAnalysis() {
+  const btn = document.getElementById('ai-btn');
+  btn.textContent = '🔄 分析中...';
+  btn.disabled = true;
+
+  try {
+    const beforeImg = document.getElementById('ba-before-img');
+    const afterImg  = document.getElementById('ba-after-img');
+    const beforeB64 = beforeImg.src.split(',')[1];
+    const afterB64  = afterImg.src.split(',')[1];
+    const mimeType  = beforeImg.src.split(';')[0].split(':')[1] || 'image/jpeg';
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': localStorage.getItem('claudeApiKey'),
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 200,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mimeType, data: beforeB64 } },
+            { type: 'image', source: { type: 'base64', media_type: mimeType, data: afterB64 } },
+            { type: 'text', text: '1枚目BEFORE、2枚目AFTERです。頭皮・髪の変化を3つ、各20文字以内の日本語で、改行区切り3行のみ出力してください。' }
+          ]
+        }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || 'APIエラー');
+    }
+
+    const data  = await res.json();
+    const lines = data.content[0].text.trim().split('\n').filter(l => l.trim()).slice(0, 3);
+
+    document.getElementById('ba-points-list').innerHTML = '';
+    baMarkers = []; renderMarkers();
+    lines.forEach((line, i) => {
+      addPointRow(i + 1);
+      document.querySelectorAll('.point-input')[i].value = line.replace(/^[\d\.\-・\s]+/, '').trim();
+    });
+
+    addUsageCount();
+    generateLine();
+    btn.textContent = '✅ 完了！再分析する';
+
+    // 警告チェック
+    const newCost = parseFloat(getEstimatedCost());
+    if (newCost >= WARN_THRESHOLD) {
+      setTimeout(() => alert(`⚠️ 推定使用額が $${newCost.toFixed(2)} になりました。\n$5の上限まで残り $${(5 - newCost).toFixed(2)} です。\n残高確認: console.anthropic.com/settings/billing`), 500);
+    }
+    renderUsageBadge();
+
+  } catch (e) {
+    alert('エラー: ' + e.message);
+    btn.textContent = '✨ AIで変化を自動分析する';
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // ── BA作成機能 ──
@@ -1530,8 +1628,8 @@ function loadBAPhoto(side, input) {
       document.getElementById('ba-points-card').style.display = 'block';
       document.getElementById('ba-line-card').style.display   = 'block';
       document.getElementById('ba-generate-area').style.display = 'block';
-      renderChangeTagPanel();
-      document.getElementById('change-tag-area').style.display = 'block';
+      renderAIPanel();
+      document.getElementById('ai-analyze-area').style.display = 'block';
       generateLine();
     }
   };
