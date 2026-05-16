@@ -640,6 +640,29 @@
 
       <button class="btn btn-secondary btn-sm" onclick="undoMarker()" style="margin-bottom:12px;">↩ 最後のマーカーを消す</button>
     </div>
+
+    <!-- AI自動分析ボタン -->
+    <div id="ai-analyze-area" style="display:none; margin-bottom:12px;">
+      <button class="btn btn-primary" onclick="analyzeWithAI()" id="ai-analyze-btn">
+        ✨ AIで変化を自動分析する
+      </button>
+      <p style="font-size:11px;color:#bbb;text-align:center;margin-top:6px;">
+        写真をAIが比較して注目ポイントを自動入力します
+      </p>
+    </div>
+  </div>
+
+  <!-- APIキー設定モーダル -->
+  <div id="apikey-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h2 style="font-size:16px;font-weight:700;margin-bottom:8px;">🔑 Claude APIキー設定</h2>
+      <p style="font-size:12px;color:#888;margin-bottom:12px;">AI分析に必要です。一度入力すれば保存されます。</p>
+      <label>APIキー（sk-ant-...）</label>
+      <input type="password" id="apikey-input" placeholder="sk-ant-api03-..." style="font-size:13px;">
+      <button class="btn btn-primary" onclick="saveApiKey()" style="margin-bottom:8px;">保存して分析開始</button>
+      <button class="btn btn-secondary" onclick="closeApiKeyModal()">キャンセル</button>
+    </div>
   </div>
 
   <!-- 注目ポイント入力 -->
@@ -1444,6 +1467,95 @@ function printReport() {
   window.print();
 }
 
+// ── APIキー管理 ──
+function openApiKeyModal() {
+  const saved = localStorage.getItem('claudeApiKey') || '';
+  document.getElementById('apikey-input').value = saved;
+  document.getElementById('apikey-modal').classList.add('open');
+}
+function closeApiKeyModal() {
+  document.getElementById('apikey-modal').classList.remove('open');
+}
+function saveApiKey() {
+  const key = document.getElementById('apikey-input').value.trim();
+  if (!key) { alert('APIキーを入力してください'); return; }
+  localStorage.setItem('claudeApiKey', key);
+  closeApiKeyModal();
+  runAnalysis();
+}
+
+// ── AI分析 ──
+async function analyzeWithAI() {
+  const key = localStorage.getItem('claudeApiKey');
+  if (!key) { openApiKeyModal(); return; }
+  runAnalysis();
+}
+
+async function runAnalysis() {
+  const btn = document.getElementById('ai-analyze-btn');
+  btn.textContent = '🔄 分析中...';
+  btn.disabled = true;
+
+  try {
+    const beforeImg = document.getElementById('ba-before-img');
+    const afterImg  = document.getElementById('ba-after-img');
+
+    // base64からdata:image/xxx;base64, の部分を除去
+    const beforeB64 = beforeImg.src.split(',')[1];
+    const afterB64  = afterImg.src.split(',')[1];
+    const mimeType  = beforeImg.src.split(';')[0].split(':')[1] || 'image/jpeg';
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': localStorage.getItem('claudeApiKey'),
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 300,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mimeType, data: beforeB64 } },
+            { type: 'image', source: { type: 'base64', media_type: mimeType, data: afterB64 } },
+            { type: 'text', text: '1枚目がBEFORE、2枚目がAFTERです。頭皮・髪の毛の変化を3つ、それぞれ20文字以内の日本語で答えてください。番号や記号は不要。改行区切りで3行だけ出力してください。' }
+          ]
+        }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || 'API エラー');
+    }
+
+    const data = await res.json();
+    const lines = data.content[0].text.trim().split('\n').filter(l => l.trim()).slice(0, 3);
+
+    // 既存のポイント行をクリアして自動入力
+    const list = document.getElementById('ba-points-list');
+    list.innerHTML = '';
+    baMarkers = [];
+    renderMarkers();
+
+    lines.forEach((line, i) => {
+      addPointRow(i + 1);
+      list.querySelectorAll('.point-input')[i].value = line.trim();
+    });
+
+    generateLine();
+    btn.textContent = '✅ 分析完了！再分析する';
+  } catch (e) {
+    alert('分析エラー: ' + e.message + '\nAPIキーを確認してください');
+    btn.textContent = '✨ AIで変化を自動分析する';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 // ── BA作成機能 ──
 let baMarkers = []; // [{x:%, y:%, num:n}]
 let baBeforeLoaded = false;
@@ -1469,6 +1581,7 @@ function loadBAPhoto(side, input) {
       document.getElementById('ba-points-card').style.display = 'block';
       document.getElementById('ba-line-card').style.display   = 'block';
       document.getElementById('ba-generate-area').style.display = 'block';
+      document.getElementById('ai-analyze-area').style.display = 'block';
       generateLine();
     }
   };
