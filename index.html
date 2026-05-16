@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>髪育・頭皮 ビフォアフター記録</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+      background: #fdf5f8;
+      color: #333;
+      min-height: 100vh;
+    }
+
+    /* ── ヘッダー ── */
+    header {
+      background: linear-gradient(135deg, #e8a8c0, #fde4ee);
+      color: white;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    header h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+    header p { font-size: 11px; opacity: 0.85; margin-top: 2px; }
+    header .logo { font-size: 28px; }
+
+    /* ── ナビ ── */
+    nav {
+      display: flex;
+      background: white;
+      border-bottom: 2px solid #fde8f0;
+      overflow-x: auto;
+    }
+    nav button {
+      flex: 1;
+      min-width: 80px;
+      padding: 12px 8px;
+      border: none;
+      background: none;
+      font-size: 12px;
+      color: #888;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    nav button.active {
+      color: #b5708a;
+      border-bottom-color: #b5708a;
+      font-weight: 700;
+    }
+
+    /* ── ページ ── */
+    .page { display: none; padding: 16px; max-width: 600px; margin: 0 auto; }
+    .page.active { display: block; }
+
+    /* ── カード ── */
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #b5708a;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ── フォーム ── */
+    label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; }
+    input[type=text], input[type=date], select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #f0d8e8;
+      border-radius: 8px;
+      font-size: 14px;
+      background: #fdf5f8;
+      margin-bottom: 12px;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #d4a0b8;
+    }
+    textarea { min-height: 80px; resize: vertical; }
+
+    /* ── スコア入力 ── */
+    .score-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .score-label { font-size: 12px; color: #555; flex: 1; }
+    .score-dots { display: flex; gap: 4px; }
+    .dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid #e8d0e0;
+      background: white;
+      cursor: pointer;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #aaa;
+      transition: all 0.15s;
+    }
+    .dot.active { background: #b5708a; border-color: #b5708a; color: white; font-weight: 700; }
+    .dot:hover { border-color: #d4a0b8; }
+
+    /* ── ボタン ── */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: linear-gradient(135deg, #e8a8c0, #fde4ee); color: white; }
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-secondary { background: #fde8f0; color: #b5708a; }
+    .btn-sm {
+      display: inline-block;
+      width: auto;
+      padding: 6px 14px;
+      font-size: 12px;
+      border-radius: 6px;
+    }
+
+    /* ── 写真アップロード ── */
+    .photo-upload-area {
+      border: 2px dashed #e0c0d4;
+      border-radius: 10px;
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      background: #fdf5f8;
+      margin-bottom: 12px;
+      transition: border-color 0.2s;
+    }
+    .photo-upload-area:hover { border-color: #d4a0b8; }
+    .photo-upload-area .icon { font-size: 36px; margin-bottom: 8px; }
+    .photo-upload-area p { font-size: 13px; color: #888; }
+    .photo-preview {
+      width: 100%;
+      max-height: 220px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      display: none;
+    }
+
+    /* ── ビフォアフタースライダー ── */
+    .ba-container {
+      position: relative;
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      user-select: none;
+      cursor: ew-resize;
+      background: #eee;
+    }
+    .ba-container img {
+      display: block;
+      width: 100%;
+      height: 260px;
+      object-fit: cover;
+    }
+    .ba-after {
+      position: absolute;
+      top: 0; left: 0;
+      width: 50%;
+      height: 100%;
+      overflow: hidden;
+    }
+    .ba-after img {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .ba-handle {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 3px;
+      height: 100%;
+      background: white;
+      transform: translateX(-50%);
+      cursor: ew-resize;
+    }
+    .ba-handle::after {
+      content: '◀ ▶';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .ba-label {
+      position: absolute;
+      top: 8px;
+      padding: 4px 10px;
+      background: rgba(0,0,0,0.55);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 4px;
+    }
+    .ba-label-before { right: 8px; }
+    .ba-label-after { left: 8px; }
+
+    /* ── お客様カード一覧 ── */
+    .client-card {
+      background: white;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .client-card:hover { transform: translateY(-2px); }
+    .client-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #e8b0cc, #f8d8e8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .client-info h3 { font-size: 14px; font-weight: 700; }
+    .client-info p { font-size: 11px; color: #888; margin-top: 2px; }
+    .client-badge {
+      margin-left: auto;
+      background: #fde8f0;
+      color: #b5708a;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+
+    /* ── タイムライン ── */
+    .timeline { position: relative; padding-left: 24px; }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 0; bottom: 0;
+      width: 2px;
+      background: #f0d8e8;
+    }
+    .timeline-item {
+      position: relative;
+      margin-bottom: 16px;
+    }
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -20px;
+      top: 4px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #d4a0b8;
+      border: 2px solid white;
+      box-shadow: 0 0 0 2px #d4a0b8;
+    }
+    .timeline-date { font-size: 11px; color: #aaa; margin-bottom: 4px; }
+    .timeline-content {
+      background: white;
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      font-size: 13px;
+    }
+
+    /* ── スコアバー ── */
+    .score-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+    .score-bar-label { width: 80px; color: #666; }
+    .score-bar-track {
+      flex: 1;
+      height: 8px;
+      background: #fde8f0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #e8b0cc, #b5708a);
+      transition: width 0.5s ease;
+    }
+    .score-bar-num { width: 24px; text-align: right; color: #b5708a; font-weight: 700; }
+
+    /* ── 空状態 ── */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #bbb;
+    }
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; }
+
+    /* ── タグ ── */
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .tag {
+      background: #fde8f0;
+      color: #b5708a;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      cursor: pointer;
+      border: 1.5px solid transparent;
+      transition: all 0.15s;
+    }
+    .tag.selected { background: #b5708a; color: white; }
+
+    /* ── 区切り ── */
+    .divider { border: none; border-top: 1px solid #fde8f0; margin: 12px 0; }
+
+    /* ── グリッド ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* ── モーダル ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 100;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: white;
+      width: 100%;
+      max-width: 600px;
+      border-radius: 20px 20px 0 0;
+      padding: 24px 16px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-handle {
+      width: 36px;
+      height: 4px;
+      background: #ddd;
+      border-radius: 2px;
+      margin: 0 auto 16px;
+    }
+
+    /* ── FAB ── */
+    .fab {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #e8a8c0, #fde4ee);
+      color: white;
+      font-size: 28px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(107,79,58,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s;
+      z-index: 50;
+    }
+    .fab:hover { transform: scale(1.1); }
+
+    /* ── 頭皮チェックアイコン ── */
+    .scalp-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    /* ── BA作成：マーカー ── */
+    .ba-img-wrap {
+      position: relative;
+      cursor: crosshair;
+      border-radius: 8px;
+      overflow: hidden;
+      user-select: none;
+    }
+    .marker-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .ba-marker {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2.5px solid #e8556a;
+      background: rgba(232,85,106,0.18);
+      color: #e8556a;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 0 3px rgba(232,85,106,0.25);
+      animation: popIn 0.2s ease;
+    }
+    @keyframes popIn {
+      from { transform: translate(-50%,-50%) scale(0.4); opacity:0; }
+      to   { transform: translate(-50%,-50%) scale(1);   opacity:1; }
+    }
+    .ba-photo-label {
+      position: absolute;
+      top: 6px; right: 6px;
+      z-index: 10;
+      background: rgba(0,0,0,0.55);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    .after-label { right: 6px; }
+
+    /* ── ポイント行 ── */
+    .point-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .point-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid #e8556a;
+      background: rgba(232,85,106,0.1);
+      color: #e8556a;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .point-input {
+      flex: 1;
+      padding: 8px 10px;
+      border: 1.5px solid #f0d8e8;
+      border-radius: 8px;
+      font-size: 13px;
+      background: #fdf5f8;
+      margin-bottom: 0;
+    }
+    .point-del {
+      background: none;
+      border: none;
+      color: #ccc;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    /* ── 比較ビュー ── */
+    .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .compare-side { text-align: center; }
+    .compare-side .label {
+      display: inline-block;
+      background: #b5708a;
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+    }
+    .compare-side img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    .compare-side .no-photo {
+      width: 100%;
+      height: 160px;
+      background: #fdf0f5;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ccc;
+      font-size: 36px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🌱 髪育・頭皮カルテ</h1>
+    <p>ビフォアフター記録アプリ</p>
+  </div>
+  <div class="logo">💆‍♀️</div>
+</header>
+
+<nav>
+  <button class="active" onclick="showPage('clients')">👥 お客様</button>
+  <button onclick="showPage('create')">✨ BA作成</button>
+  <button onclick="showPage('record')">📷 記録する</button>
+  <button onclick="showPage('compare')">🔀 比較</button>
+  <button onclick="showPage('report')">📊 レポート</button>
+</nav>
+
+<!-- ── BA作成ページ ── -->
+<div id="page-create" class="page">
+
+  <div class="card">
+    <div class="card-title">✨ ビフォアフター作成</div>
+    <p style="font-size:12px;color:#888;margin-bottom:12px;">写真をアップして、変化の部分をタップすると番号マーカーが置けます</p>
+
+    <!-- 写真アップロード -->
+    <div class="grid-2" style="margin-bottom:14px;">
+      <div>
+        <label style="text-align:center;display:block;margin-bottom:6px;font-weight:700;">BEFORE</label>
+        <div class="photo-upload-area" onclick="triggerUpload('ba-before-input')" id="ba-before-placeholder">
+          <div class="icon">📷</div>
+          <p>施術前の写真</p>
+        </div>
+        <input type="file" id="ba-before-input" accept="image/*" style="display:none" onchange="loadBAPhoto('before',this)">
+      </div>
+      <div>
+        <label style="text-align:center;display:block;margin-bottom:6px;font-weight:700;">AFTER</label>
+        <div class="photo-upload-area" onclick="triggerUpload('ba-after-input')" id="ba-after-placeholder">
+          <div class="icon">📷</div>
+          <p>施術後の写真</p>
+        </div>
+        <input type="file" id="ba-after-input" accept="image/*" style="display:none" onchange="loadBAPhoto('after',this)">
+      </div>
+    </div>
+
+    <!-- マーカーモード説明 -->
+    <div id="ba-marker-hint" style="display:none;background:#fff5f8;border:1.5px solid #f8d0e8;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#a06080;">
+      📍 写真をタップすると赤丸マーカーが置けます。両方の写真の同じ位置に自動で表示されます
+    </div>
+
+    <!-- 写真エリア（マーカーオーバーレイ付き） -->
+    <div id="ba-photo-area" style="display:none;">
+      <div class="grid-2" style="margin-bottom:12px;">
+        <div style="position:relative;">
+          <div class="ba-photo-label">BEFORE</div>
+          <div class="ba-img-wrap" id="before-wrap" onclick="addMarkerAt(event,'before')">
+            <img id="ba-before-img" style="width:100%;border-radius:8px;display:block;">
+            <div id="before-markers" class="marker-layer"></div>
+          </div>
+        </div>
+        <div style="position:relative;">
+          <div class="ba-photo-label after-label">AFTER</div>
+          <div class="ba-img-wrap" id="after-wrap" onclick="addMarkerAt(event,'after')">
+            <img id="ba-after-img" style="width:100%;border-radius:8px;display:block;">
+            <div id="after-markers" class="marker-layer"></div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-secondary btn-sm" onclick="undoMarker()" style="margin-bottom:12px;">↩ 最後のマーカーを消す</button>
+    </div>
+  </div>
+
+  <!-- 注目ポイント入力 -->
+  <div class="card" id="ba-points-card" style="display:none;">
+    <div class="card-title">✨ 注目ポイント</div>
+    <div id="ba-points-list"></div>
+    <button class="btn btn-secondary btn-sm" onclick="addPointRow()" style="margin-top:4px;">＋ ポイントを追加</button>
+  </div>
+
+  <!-- LINE文章 -->
+  <div class="card" id="ba-line-card" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div class="card-title" style="margin-bottom:0;">💬 LINE送信文章</div>
+      <button class="btn btn-primary btn-sm" onclick="copyLineText()">コピー</button>
+    </div>
+    <div style="margin-bottom:8px;">
+      <label style="font-size:11px;color:#888;">施術名（任意）</label>
+      <input type="text" id="ba-treatment-name" placeholder="例：頭皮スパ・育毛トリートメント" oninput="generateLine()">
+    </div>
+    <textarea id="ba-line-text" style="min-height:160px;font-size:13px;line-height:1.7;" readonly></textarea>
+    <div style="margin-top:8px;">
+      <label style="font-size:11px;color:#888;">アフターケアメッセージ（編集可）</label>
+      <input type="text" id="ba-aftercare" value="頭皮を清潔に保ち、育毛シャンプーを続けてくださいね🌿 次回のご来店も楽しみにお待ちしております！" oninput="generateLine()" style="font-size:12px;">
+    </div>
+  </div>
+
+  <!-- 生成ボタン -->
+  <div id="ba-generate-area" style="display:none;margin-bottom:80px;">
+    <button class="btn btn-primary" onclick="generateLine()">📝 LINE文章を自動生成</button>
+  </div>
+
+</div>
+
+<!-- ── お客様一覧ページ ── -->
+<div id="page-clients" class="page active">
+
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; margin-top:4px;">
+    <h2 style="font-size:16px; font-weight:700; color:#444;">お客様一覧</h2>
+    <button class="btn btn-primary btn-sm" onclick="openNewClientModal()">＋ 新規登録</button>
+  </div>
+
+  <div id="client-list">
+    <!-- JS で生成 -->
+  </div>
+</div>
+
+<!-- ── 記録ページ ── -->
+<div id="page-record" class="page">
+  <div class="card">
+    <div class="card-title">📋 記録するお客様を選択</div>
+    <select id="record-client-select" onchange="onSelectRecordClient()">
+      <option value="">--- お客様を選んでください ---</option>
+    </select>
+  </div>
+
+  <div id="record-form" style="display:none;">
+
+    <div class="card">
+      <div class="card-title">📅 来店日</div>
+      <input type="date" id="visit-date">
+    </div>
+
+    <!-- 写真 -->
+    <div class="card">
+      <div class="card-title">📷 頭皮・髪の写真</div>
+      <div class="grid-2">
+        <div>
+          <label style="text-align:center; display:block; margin-bottom:6px;">頭皮（真上）</label>
+          <div class="photo-upload-area" onclick="triggerUpload('scalp-photo')">
+            <img id="scalp-preview" class="photo-preview">
+            <div id="scalp-placeholder">
+              <div class="icon">🔬</div>
+              <p>頭皮写真を追加</p>
+            </div>
+          </div>
+          <input type="file" id="scalp-photo" accept="image/*" style="display:none" onchange="previewPhoto('scalp-photo','scalp-preview','scalp-placeholder')">
+        </div>
+        <div>
+          <label style="text-align:center; display:block; margin-bottom:6px;">髪全体</label>
+          <div class="photo-upload-area" onclick="triggerUpload('hair-photo')">
+            <img id="hair-preview" class="photo-preview">
+            <div id="hair-placeholder">
+              <div class="icon">💇‍♀️</div>
+              <p>髪の写真を追加</p>
+            </div>
+          </div>
+          <input type="file" id="hair-photo" accept="image/*" style="display:none" onchange="previewPhoto('hair-photo','hair-preview','hair-placeholder')">
+        </div>
+      </div>
+    </div>
+
+    <!-- 頭皮チェック -->
+    <div class="card">
+      <div class="card-title">🔍 頭皮の状態チェック</div>
+
+      <div class="score-row">
+        <span class="score-label">皮脂・油分</span>
+        <div class="score-dots" id="score-sebum"></div>
+      </div>
+      <div class="score-row">
+        <span class="score-label">乾燥・かさつき</span>
+        <div class="score-dots" id="score-dryness"></div>
+      </div>
+      <div class="score-row">
+        <span class="score-label">赤み・炎症</span>
+        <div class="score-dots" id="score-redness"></div>
+      </div>
+      <div class="score-row">
+        <span class="score-label">毛穴詰まり</span>
+        <div class="score-dots" id="score-pores"></div>
+      </div>
+      <div class="score-row">
+        <span class="score-label">フケ・角質</span>
+        <div class="score-dots" id="score-dandruff"></div>
+      </div>
+      <div class="score-row">
+        <span class="score-label">かゆみ</span>
+        <div class="score-dots" id="score-itch"></div>
+      </div>
+    </div>
+
+    <!-- 髪の状態 -->
+    <div class="card">
+      <div class="card-title">✨ 髪の状態チェック</div>
+
+      <div class="score-row">
+        <span class="score-label">ボリューム・密度</span>
+        <div class="score-dots" id="score-volume"></div>
+      </div>
+      <div class="score-row">
+        <span class="score-label">ハリ・コシ</span>
+        <div class="score-dots" id="score-strength"></div>
+      </div>
+      <div class="score-row">
+        <span class="score-label">ツヤ</span>
+        <div class="score-dots" id="score-shine"></div>
+      </div>
+      <div class="score-row">
+        <span class="score-label">うぶ毛の本数</span>
+        <div class="score-dots" id="score-baby-hair"></div>
+      </div>
+    </div>
+
+    <!-- 頭皮タイプ -->
+    <div class="card">
+      <div class="card-title">🏷️ 頭皮タイプ</div>
+      <div class="tags" id="scalp-type-tags">
+        <span class="tag" onclick="toggleTag(this)">脂性肌</span>
+        <span class="tag" onclick="toggleTag(this)">乾燥肌</span>
+        <span class="tag" onclick="toggleTag(this)">混合肌</span>
+        <span class="tag" onclick="toggleTag(this)">敏感肌</span>
+        <span class="tag" onclick="toggleTag(this)">普通肌</span>
+        <span class="tag" onclick="toggleTag(this)">頭皮が固い</span>
+        <span class="tag" onclick="toggleTag(this)">血行不良</span>
+        <span class="tag" onclick="toggleTag(this)">抜け毛多め</span>
+        <span class="tag" onclick="toggleTag(this)">薄毛・透け感</span>
+      </div>
+    </div>
+
+    <!-- 施術内容 -->
+    <div class="card">
+      <div class="card-title">💆 本日の施術</div>
+      <div class="tags" id="treatment-tags">
+        <span class="tag" onclick="toggleTag(this)">頭皮スパ</span>
+        <span class="tag" onclick="toggleTag(this)">育毛トリートメント</span>
+        <span class="tag" onclick="toggleTag(this)">頭皮マッサージ</span>
+        <span class="tag" onclick="toggleTag(this)">スカルプケア</span>
+        <span class="tag" onclick="toggleTag(this)">炭酸泉</span>
+        <span class="tag" onclick="toggleTag(this)">アミノ酸シャンプー</span>
+        <span class="tag" onclick="toggleTag(this)">カット</span>
+        <span class="tag" onclick="toggleTag(this)">カラー</span>
+        <span class="tag" onclick="toggleTag(this)">パーマ</span>
+      </div>
+    </div>
+
+    <!-- メモ -->
+    <div class="card">
+      <div class="card-title">📝 担当者メモ</div>
+      <textarea id="staff-memo" placeholder="気になった点、お客様の悩み、次回への申し送りなど"></textarea>
+    </div>
+
+    <!-- お客様の声 -->
+    <div class="card">
+      <div class="card-title">💬 お客様の声・変化</div>
+      <textarea id="client-voice" placeholder="「頭皮がスッキリした」「最近抜け毛が減った気がする」など"></textarea>
+    </div>
+
+    <button class="btn btn-primary" onclick="saveRecord()" style="margin-bottom:80px;">💾 この記録を保存する</button>
+  </div>
+</div>
+
+<!-- ── 比較ページ ── -->
+<div id="page-compare" class="page">
+  <div class="card">
+    <div class="card-title">🔀 比較するお客様を選択</div>
+    <select id="compare-client-select" onchange="onSelectCompareClient()">
+      <option value="">--- お客様を選んでください ---</option>
+    </select>
+  </div>
+
+  <div id="compare-view" style="display:none;">
+
+    <!-- 写真スライダー比較 -->
+    <div class="card">
+      <div class="card-title">📸 頭皮写真の比較</div>
+      <div id="ba-slider-scalp" class="ba-container" style="display:none;">
+        <img id="ba-before-scalp" src="" alt="Before">
+        <div class="ba-after" id="ba-after-scalp-div">
+          <img id="ba-after-scalp" src="" alt="After">
+        </div>
+        <div class="ba-label ba-label-before">BEFORE</div>
+        <div class="ba-label ba-label-after">AFTER</div>
+        <div class="ba-handle" id="handle-scalp"></div>
+      </div>
+      <div id="no-scalp-photos" class="empty-state" style="display:none;">
+        <div class="icon">📷</div>
+        <p>頭皮写真が2回分揃うと<br>スライダーで比較できます</p>
+      </div>
+    </div>
+
+    <!-- 髪写真比較 -->
+    <div class="card">
+      <div class="card-title">💇 髪の写真の比較</div>
+      <div class="compare-grid" id="hair-compare-grid"></div>
+    </div>
+
+    <!-- スコア推移グラフ -->
+    <div class="card">
+      <div class="card-title">📈 スコア推移</div>
+      <div id="score-chart"></div>
+    </div>
+
+    <!-- タイムライン -->
+    <div class="card">
+      <div class="card-title">📅 来店タイムライン</div>
+      <div class="timeline" id="visit-timeline"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── レポートページ ── -->
+<div id="page-report" class="page">
+  <div class="card">
+    <div class="card-title">📊 レポート生成</div>
+    <select id="report-client-select" onchange="onSelectReportClient()">
+      <option value="">--- お客様を選んでください ---</option>
+    </select>
+  </div>
+  <div id="report-view" style="display:none;"></div>
+</div>
+
+<!-- ── 新規お客様モーダル ── -->
+<div id="new-client-modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2 style="font-size:16px; font-weight:700; margin-bottom:16px;">👤 新規お客様登録</h2>
+
+    <label>お名前</label>
+    <input type="text" id="nc-name" placeholder="例：田中 花子">
+
+    <label>ふりがな</label>
+    <input type="text" id="nc-kana" placeholder="例：たなか はなこ">
+
+    <label>初回来店日</label>
+    <input type="date" id="nc-first-visit">
+
+    <label>主な悩み</label>
+    <div class="tags" id="nc-concern-tags">
+      <span class="tag" onclick="toggleTag(this)">抜け毛</span>
+      <span class="tag" onclick="toggleTag(this)">薄毛</span>
+      <span class="tag" onclick="toggleTag(this)">頭皮のかゆみ</span>
+      <span class="tag" onclick="toggleTag(this)">フケ</span>
+      <span class="tag" onclick="toggleTag(this)">頭皮の脂っぽさ</span>
+      <span class="tag" onclick="toggleTag(this)">乾燥・パサつき</span>
+      <span class="tag" onclick="toggleTag(this)">ハリ・コシがない</span>
+      <span class="tag" onclick="toggleTag(this)">ボリュームダウン</span>
+      <span class="tag" onclick="toggleTag(this)">育毛促進</span>
+    </div>
+
+    <label>目標・ゴール</label>
+    <textarea id="nc-goal" placeholder="例：6ヶ月でうぶ毛を増やし、ボリュームを取り戻す"></textarea>
+
+    <label>担当者メモ</label>
+    <input type="text" id="nc-memo" placeholder="アレルギー・注意事項など">
+
+    <button class="btn btn-primary" onclick="saveNewClient()" style="margin-bottom:8px;">登録する</button>
+    <button class="btn btn-secondary" onclick="closeNewClientModal()">キャンセル</button>
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab" onclick="openNewClientModal()">＋</button>
+
+<script>
+// ── データ管理 ──
+let db = JSON.parse(localStorage.getItem('hairDB') || '{"clients":[],"records":[]}');
+
+function save() {
+  localStorage.setItem('hairDB', JSON.stringify(db));
+}
+
+// ── スコアドット生成 ──
+function createScoreDots(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'dot';
+    dot.textContent = i;
+    dot.dataset.value = i;
+    dot.dataset.group = containerId;
+    dot.onclick = function() {
+      document.querySelectorAll(`.dot[data-group="${containerId}"]`).forEach(d => d.classList.remove('active'));
+      this.classList.add('active');
+    };
+    container.appendChild(dot);
+  }
+}
+
+function getScore(containerId) {
+  const active = document.querySelector(`.dot[data-group="${containerId}"].active`);
+  return active ? parseInt(active.dataset.value) : 0;
+}
+
+function setScore(containerId, value) {
+  document.querySelectorAll(`.dot[data-group="${containerId}"]`).forEach(d => {
+    d.classList.toggle('active', parseInt(d.dataset.value) === value);
+  });
+}
+
+// ── ナビ ──
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name === 'clients') renderClientList();
+  if (name === 'record')  updateClientSelects();
+  if (name === 'compare') updateClientSelects();
+  if (name === 'report')  updateClientSelects();
+}
+
+// ── お客様一覧 ──
+function renderClientList() {
+  const el = document.getElementById('client-list');
+  if (db.clients.length === 0) {
+    el.innerHTML = `<div class="empty-state"><div class="icon">👤</div><p>まだお客様が登録されていません<br>右下の＋ボタンから登録してください</p></div>`;
+    return;
+  }
+  el.innerHTML = db.clients.map((c, i) => {
+    const records = db.records.filter(r => r.clientId === c.id);
+    return `
+      <div class="client-card" onclick="openClientDetail(${i})">
+        <div class="client-avatar">👤</div>
+        <div class="client-info">
+          <h3>${c.name}</h3>
+          <p>${c.kana || ''} ／ 初回: ${c.firstVisit || '未設定'}</p>
+          <p style="color:#d4a0b8; margin-top:2px;">${(c.concerns || []).slice(0,2).join('・')}</p>
+        </div>
+        <div class="client-badge">${records.length}回</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ── セレクト更新 ──
+function updateClientSelects() {
+  ['record-client-select','compare-client-select','report-client-select'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">--- お客様を選んでください ---</option>';
+    db.clients.forEach(c => {
+      sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+    });
+    sel.value = cur;
+  });
+}
+
+// ── 新規お客様モーダル ──
+function openNewClientModal() {
+  document.getElementById('new-client-modal').classList.add('open');
+  document.getElementById('nc-first-visit').value = new Date().toISOString().slice(0,10);
+}
+function closeNewClientModal() {
+  document.getElementById('new-client-modal').classList.remove('open');
+}
+function saveNewClient() {
+  const name = document.getElementById('nc-name').value.trim();
+  if (!name) { alert('お名前を入力してください'); return; }
+  const concerns = [...document.querySelectorAll('#nc-concern-tags .tag.selected')].map(t => t.textContent);
+  const client = {
+    id: Date.now().toString(),
+    name,
+    kana: document.getElementById('nc-kana').value.trim(),
+    firstVisit: document.getElementById('nc-first-visit').value,
+    concerns,
+    goal: document.getElementById('nc-goal').value.trim(),
+    memo: document.getElementById('nc-memo').value.trim(),
+  };
+  db.clients.push(client);
+  save();
+  closeNewClientModal();
+  renderClientList();
+  // フォームリセット
+  ['nc-name','nc-kana','nc-goal','nc-memo'].forEach(id => document.getElementById(id).value = '');
+  document.querySelectorAll('#nc-concern-tags .tag').forEach(t => t.classList.remove('selected'));
+  alert(`${name}さんを登録しました！`);
+}
+
+// ── タグ切り替え ──
+function toggleTag(el) {
+  el.classList.toggle('selected');
+  el.classList.toggle('active');
+}
+
+// ── 写真アップロード ──
+function triggerUpload(inputId) {
+  document.getElementById(inputId).click();
+}
+function previewPhoto(inputId, previewId, placeholderId) {
+  const file = document.getElementById(inputId).files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById(previewId);
+    img.src = e.target.result;
+    img.style.display = 'block';
+    document.getElementById(placeholderId).style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── 記録ページ ──
+const scoreKeys = ['sebum','dryness','redness','pores','dandruff','itch','volume','strength','shine','baby-hair'];
+function initScoreDots() {
+  scoreKeys.forEach(k => createScoreDots('score-' + k));
+}
+
+function onSelectRecordClient() {
+  const val = document.getElementById('record-client-select').value;
+  document.getElementById('record-form').style.display = val ? 'block' : 'none';
+  document.getElementById('visit-date').value = new Date().toISOString().slice(0,10);
+  scoreKeys.forEach(k => setScore('score-' + k, 0));
+  // 写真リセット
+  ['scalp-preview','hair-preview'].forEach(id => { document.getElementById(id).style.display='none'; document.getElementById(id).src=''; });
+  ['scalp-placeholder','hair-placeholder'].forEach(id => document.getElementById(id).style.display='');
+  document.getElementById('staff-memo').value = '';
+  document.getElementById('client-voice').value = '';
+  document.querySelectorAll('#scalp-type-tags .tag, #treatment-tags .tag').forEach(t => { t.classList.remove('selected'); t.classList.remove('active'); });
+}
+
+function saveRecord() {
+  const clientId = document.getElementById('record-client-select').value;
+  if (!clientId) return;
+
+  const scalpImgEl = document.getElementById('scalp-preview');
+  const hairImgEl  = document.getElementById('hair-preview');
+
+  const record = {
+    id: Date.now().toString(),
+    clientId,
+    date: document.getElementById('visit-date').value,
+    scalpPhoto: scalpImgEl.style.display !== 'none' ? scalpImgEl.src : null,
+    hairPhoto: hairImgEl.style.display !== 'none' ? hairImgEl.src : null,
+    scores: Object.fromEntries(scoreKeys.map(k => [k, getScore('score-' + k)])),
+    scalpTypes: [...document.querySelectorAll('#scalp-type-tags .tag.selected, #scalp-type-tags .tag.active')].map(t => t.textContent),
+    treatments: [...document.querySelectorAll('#treatment-tags .tag.selected, #treatment-tags .tag.active')].map(t => t.textContent),
+    staffMemo: document.getElementById('staff-memo').value.trim(),
+    clientVoice: document.getElementById('client-voice').value.trim(),
+  };
+
+  db.records.push(record);
+  save();
+
+  const client = db.clients.find(c => c.id === clientId);
+  alert(`${client.name}さんの記録を保存しました！`);
+  onSelectRecordClient();
+}
+
+// ── 比較ページ ──
+function onSelectCompareClient() {
+  const clientId = document.getElementById('compare-client-select').value;
+  document.getElementById('compare-view').style.display = clientId ? 'block' : 'none';
+  if (!clientId) return;
+
+  const records = db.records.filter(r => r.clientId === clientId).sort((a,b) => a.date.localeCompare(b.date));
+
+  // スライダー比較（頭皮）
+  const scalpRecords = records.filter(r => r.scalpPhoto);
+  const sliderEl = document.getElementById('ba-slider-scalp');
+  const noPhotoEl = document.getElementById('no-scalp-photos');
+
+  if (scalpRecords.length >= 2) {
+    const first = scalpRecords[0], last = scalpRecords[scalpRecords.length - 1];
+    document.getElementById('ba-before-scalp').src = first.scalpPhoto;
+    document.getElementById('ba-after-scalp').src = last.scalpPhoto;
+    sliderEl.style.display = 'block';
+    noPhotoEl.style.display = 'none';
+    initSlider('ba-slider-scalp', 'ba-after-scalp-div', 'handle-scalp');
+  } else {
+    sliderEl.style.display = 'none';
+    noPhotoEl.style.display = 'block';
+  }
+
+  // 髪写真比較
+  const hairRecords = records.filter(r => r.hairPhoto);
+  const hairGrid = document.getElementById('hair-compare-grid');
+  if (hairRecords.length >= 2) {
+    const first = hairRecords[0], last = hairRecords[hairRecords.length - 1];
+    hairGrid.innerHTML = `
+      <div class="compare-side"><span class="label">BEFORE（${first.date}）</span><img src="${first.hairPhoto}"></div>
+      <div class="compare-side"><span class="label">AFTER（${last.date}）</span><img src="${last.hairPhoto}"></div>
+    `;
+  } else {
+    hairGrid.innerHTML = `<div class="compare-side"><span class="label">BEFORE</span><div class="no-photo">📷</div></div><div class="compare-side"><span class="label">AFTER</span><div class="no-photo">📷</div></div>`;
+  }
+
+  // スコアチャート
+  renderScoreChart(records);
+
+  // タイムライン
+  renderTimeline(records);
+}
+
+function renderScoreChart(records) {
+  const el = document.getElementById('score-chart');
+  if (records.length === 0) { el.innerHTML = '<p style="color:#bbb;font-size:13px;text-align:center;">記録がありません</p>'; return; }
+
+  const last = records[records.length - 1];
+  const items = [
+    { label: '皮脂', key: 'sebum', icon: '💧' },
+    { label: '乾燥', key: 'dryness', icon: '🌵' },
+    { label: 'ボリューム', key: 'volume', icon: '✨' },
+    { label: 'ハリ', key: 'strength', icon: '💪' },
+    { label: 'ツヤ', key: 'shine', icon: '🌟' },
+    { label: 'うぶ毛', key: 'baby-hair', icon: '🌱' },
+  ];
+
+  el.innerHTML = items.map(item => {
+    const val = (last.scores || {})[item.key] || 0;
+    const first = records[0];
+    const firstVal = (first.scores || {})[item.key] || 0;
+    const diff = val - firstVal;
+    const diffText = diff > 0 ? `<span style="color:#b5708a">▲${diff}</span>` : diff < 0 ? `<span style="color:#c0776a">▼${Math.abs(diff)}</span>` : '';
+    return `
+      <div class="score-bar-row">
+        <span class="score-bar-label">${item.icon} ${item.label}</span>
+        <div class="score-bar-track"><div class="score-bar-fill" style="width:${val*20}%"></div></div>
+        <span class="score-bar-num">${val}</span>
+        <span style="font-size:11px; width:32px;">${diffText}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderTimeline(records) {
+  const el = document.getElementById('visit-timeline');
+  if (records.length === 0) { el.innerHTML = '<p style="color:#bbb;font-size:13px;">記録がありません</p>'; return; }
+  el.innerHTML = [...records].reverse().map(r => `
+    <div class="timeline-item">
+      <div class="timeline-date">${r.date}</div>
+      <div class="timeline-content">
+        ${r.treatments && r.treatments.length ? `<div style="margin-bottom:6px;">${r.treatments.map(t => `<span class="tag" style="cursor:default">${t}</span>`).join('')}</div>` : ''}
+        ${r.clientVoice ? `<p style="color:#b5708a;">💬 "${r.clientVoice}"</p>` : ''}
+        ${r.staffMemo ? `<p style="color:#888; margin-top:4px; font-size:12px;">📝 ${r.staffMemo}</p>` : ''}
+        ${!r.clientVoice && !r.staffMemo ? '<p style="color:#bbb;">メモなし</p>' : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── ビフォアフタースライダー ──
+function initSlider(containerId, afterDivId, handleId) {
+  const container = document.getElementById(containerId);
+  const afterDiv = document.getElementById(afterDivId);
+  const handle = document.getElementById(handleId);
+  let dragging = false;
+
+  function setPos(x) {
+    const rect = container.getBoundingClientRect();
+    let pct = Math.max(0, Math.min(1, (x - rect.left) / rect.width));
+    afterDiv.style.width = (pct * 100) + '%';
+    handle.style.left = (pct * 100) + '%';
+  }
+
+  container.addEventListener('mousedown', e => { dragging = true; setPos(e.clientX); });
+  container.addEventListener('touchstart', e => { dragging = true; setPos(e.touches[0].clientX); }, {passive:true});
+  document.addEventListener('mousemove', e => { if (dragging) setPos(e.clientX); });
+  document.addEventListener('touchmove', e => { if (dragging) setPos(e.touches[0].clientX); }, {passive:true});
+  document.addEventListener('mouseup', () => dragging = false);
+  document.addEventListener('touchend', () => dragging = false);
+}
+
+// ── レポートページ ──
+function onSelectReportClient() {
+  const clientId = document.getElementById('report-client-select').value;
+  const el = document.getElementById('report-view');
+  if (!clientId) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+
+  const client = db.clients.find(c => c.id === clientId);
+  const records = db.records.filter(r => r.clientId === clientId).sort((a,b) => a.date.localeCompare(b.date));
+
+  el.innerHTML = `
+    <div class="card" id="report-card">
+      <div style="text-align:center; padding-bottom:12px; border-bottom:1px solid #fde8f0; margin-bottom:12px;">
+        <div style="font-size:40px; margin-bottom:8px;">🌱</div>
+        <h2 style="font-size:18px; font-weight:700;">${client.name} 様</h2>
+        <p style="font-size:12px; color:#888;">初回来店: ${client.firstVisit || '未設定'} ／ 来店回数: ${records.length}回</p>
+      </div>
+
+      ${client.goal ? `<div style="background:#fdf5f8; border-radius:8px; padding:12px; margin-bottom:12px;"><p style="font-size:12px; color:#888; margin-bottom:4px;">🎯 目標</p><p style="font-size:14px; color:#b5708a; font-weight:700;">${client.goal}</p></div>` : ''}
+
+      <p style="font-size:13px; font-weight:700; color:#555; margin-bottom:8px;">お悩みタグ</p>
+      <div class="tags" style="margin-bottom:12px;">
+        ${(client.concerns || []).map(c => `<span class="tag selected">${c}</span>`).join('')}
+      </div>
+
+      ${records.length >= 2 ? `
+        <p style="font-size:13px; font-weight:700; color:#555; margin-bottom:8px;">📈 スコア変化（初回 → 最新）</p>
+        ${generateScoreComparePrint(records)}
+      ` : ''}
+
+      ${records.length > 0 ? `
+        <p style="font-size:13px; font-weight:700; color:#555; margin:12px 0 8px;">💬 お客様の声</p>
+        ${records.filter(r=>r.clientVoice).map(r => `<p style="font-size:13px; color:#555; margin-bottom:6px;">"${r.clientVoice}"</p>`).join('')}
+      ` : ''}
+
+      <p style="font-size:10px; color:#bbb; text-align:right; margin-top:12px;">作成日: ${new Date().toLocaleDateString('ja-JP')}</p>
+    </div>
+    <button class="btn btn-secondary" onclick="printReport()" style="margin-bottom:12px;">🖨️ 印刷・PDF保存</button>
+  `;
+}
+
+function generateScoreComparePrint(records) {
+  const first = records[0], last = records[records.length - 1];
+  const items = [
+    { label: 'ボリューム・密度', key: 'volume' },
+    { label: 'ハリ・コシ', key: 'strength' },
+    { label: 'ツヤ', key: 'shine' },
+    { label: 'うぶ毛', key: 'baby-hair' },
+    { label: '頭皮:皮脂', key: 'sebum' },
+    { label: '頭皮:乾燥', key: 'dryness' },
+  ];
+  return items.map(item => {
+    const v1 = (first.scores||{})[item.key]||0;
+    const v2 = (last.scores||{})[item.key]||0;
+    const diff = v2 - v1;
+    const emoji = diff > 0 ? '▲' : diff < 0 ? '▼' : '－';
+    const color = diff > 0 ? '#b5708a' : diff < 0 ? '#c07070' : '#aaa';
+    return `<div class="score-bar-row">
+      <span class="score-bar-label">${item.label}</span>
+      <div class="score-bar-track"><div class="score-bar-fill" style="width:${v2*20}%"></div></div>
+      <span style="font-size:12px; color:${color}; font-weight:700;">${emoji}${Math.abs(diff)||''}</span>
+    </div>`;
+  }).join('');
+}
+
+function printReport() {
+  window.print();
+}
+
+// ── BA作成機能 ──
+let baMarkers = []; // [{x:%, y:%, num:n}]
+let baBeforeLoaded = false;
+let baAfterLoaded  = false;
+
+function loadBAPhoto(side, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const imgId  = side === 'before' ? 'ba-before-img'  : 'ba-after-img';
+    const phId   = side === 'before' ? 'ba-before-placeholder' : 'ba-after-placeholder';
+    const img    = document.getElementById(imgId);
+    img.src      = e.target.result;
+    document.getElementById(phId).style.display = 'none';
+
+    if (side === 'before') baBeforeLoaded = true;
+    else                   baAfterLoaded  = true;
+
+    if (baBeforeLoaded && baAfterLoaded) {
+      document.getElementById('ba-photo-area').style.display  = 'block';
+      document.getElementById('ba-marker-hint').style.display = 'block';
+      document.getElementById('ba-points-card').style.display = 'block';
+      document.getElementById('ba-line-card').style.display   = 'block';
+      document.getElementById('ba-generate-area').style.display = 'block';
+      generateLine();
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function addMarkerAt(e, side) {
+  // どちらの写真をタップしても両方に同じ相対座標でマーカーを置く
+  const wrap = e.currentTarget;
+  const rect = wrap.getBoundingClientRect();
+  const xPct = ((e.clientX - rect.left)  / rect.width)  * 100;
+  const yPct = ((e.clientY - rect.top)   / rect.height) * 100;
+  const num  = baMarkers.length + 1;
+
+  baMarkers.push({ x: xPct, y: yPct, num });
+  renderMarkers();
+  syncPointRows();
+  generateLine();
+}
+
+function renderMarkers() {
+  ['before-markers','after-markers'].forEach(id => {
+    const layer = document.getElementById(id);
+    layer.innerHTML = baMarkers.map(m => `
+      <div class="ba-marker" style="left:${m.x}%;top:${m.y}%;">${m.num}</div>
+    `).join('');
+  });
+}
+
+function undoMarker() {
+  if (baMarkers.length === 0) return;
+  baMarkers.pop();
+  renderMarkers();
+  syncPointRows();
+  generateLine();
+}
+
+function syncPointRows() {
+  // マーカー数に合わせてポイント行を増減
+  const list = document.getElementById('ba-points-list');
+  const existing = list.querySelectorAll('.point-row');
+  // 追加
+  for (let i = existing.length; i < baMarkers.length; i++) addPointRow(i + 1);
+  // 削除
+  while (list.querySelectorAll('.point-row').length > baMarkers.length) {
+    list.removeChild(list.lastElementChild);
+  }
+  // 番号更新
+  list.querySelectorAll('.point-num').forEach((el, i) => el.textContent = i + 1);
+}
+
+function addPointRow(num) {
+  const list = document.getElementById('ba-points-list');
+  const n    = num || list.querySelectorAll('.point-row').length + 1;
+  const row  = document.createElement('div');
+  row.className = 'point-row';
+  row.innerHTML = `
+    <div class="point-num">${n}</div>
+    <input class="point-input" type="text" placeholder="例：うぶ毛が増えてボリュームアップ" oninput="generateLine()">
+    <button class="point-del" onclick="deletePointRow(this)">×</button>
+  `;
+  list.appendChild(row);
+}
+
+function deletePointRow(btn) {
+  btn.closest('.point-row').remove();
+  // 番号を振り直す
+  document.querySelectorAll('#ba-points-list .point-num').forEach((el, i) => el.textContent = i + 1);
+  generateLine();
+}
+
+function getPoints() {
+  return [...document.querySelectorAll('#ba-points-list .point-input')]
+    .map(inp => inp.value.trim())
+    .filter(v => v);
+}
+
+function generateLine() {
+  const treatment  = document.getElementById('ba-treatment-name').value.trim();
+  const aftercare  = document.getElementById('ba-aftercare').value.trim();
+  const points     = getPoints();
+
+  let text = `本日はご来店ありがとうございました✨`;
+  if (treatment) text += ` ${treatment}`;
+  text += ` 施術前後でしっかり変化が出ましたね！`;
+
+  if (points.length > 0) {
+    const nums = ['①','②','③','④','⑤'];
+    points.forEach((p, i) => { text += `${nums[i]}${p}。`; });
+  }
+
+  if (aftercare) text += ` ${aftercare}`;
+
+  document.getElementById('ba-line-text').value = text;
+}
+
+function copyLineText() {
+  const text = document.getElementById('ba-line-text').value;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.currentTarget;
+    const orig = btn.textContent;
+    btn.textContent = 'コピーしました✓';
+    btn.style.background = '#5aaa7a';
+    setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 2000);
+  });
+}
+
+// ── 初期化 ──
+function init() {
+  initScoreDots();
+  renderClientList();
+
+  // サンプルデータ（初回のみ）
+  if (db.clients.length === 0) {
+    const sampleClient = {
+      id: 'sample1',
+      name: '山田 花子',
+      kana: 'やまだ はなこ',
+      firstVisit: '2026-01-15',
+      concerns: ['抜け毛', '薄毛', 'ボリュームダウン'],
+      goal: '6ヶ月でうぶ毛を増やし、トップのボリュームを取り戻す',
+      memo: '',
+    };
+    db.clients.push(sampleClient);
+    const rec1 = {
+      id: 'rec1', clientId: 'sample1', date: '2026-01-15', scalpPhoto: null, hairPhoto: null,
+      scores: { sebum:3, dryness:2, redness:1, pores:3, dandruff:1, itch:2, volume:2, strength:2, shine:2, 'baby-hair':1 },
+      scalpTypes: ['脂性肌','毛穴詰まり'], treatments: ['頭皮スパ','育毛トリートメント'],
+      staffMemo: '初回。頭皮の油分が多め。毛穴詰まりあり。', clientVoice: '頭皮がスッキリしました！',
+    };
+    const rec2 = {
+      id: 'rec2', clientId: 'sample1', date: '2026-03-15', scalpPhoto: null, hairPhoto: null,
+      scores: { sebum:2, dryness:2, redness:1, pores:2, dandruff:1, itch:1, volume:3, strength:3, shine:3, 'baby-hair':3 },
+      scalpTypes: ['脂性肌'], treatments: ['頭皮スパ','育毛トリートメント','頭皮マッサージ'],
+      staffMemo: 'うぶ毛が増えてきた。毛穴詰まりが改善。', clientVoice: 'うぶ毛が生えてきた気がする！友達にも言われました',
+    };
+    db.records.push(rec1, rec2);
+    save();
+    renderClientList();
+  }
+}
+
+window.onload = init;
+</script>
+</body>
+</html>
