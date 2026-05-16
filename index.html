@@ -181,6 +181,7 @@
       width: 100%;
       height: 260px;
       object-fit: cover;
+      object-position: center;
     }
     .ba-after {
       position: absolute;
@@ -429,6 +430,14 @@
       border-radius: 8px;
       overflow: hidden;
       user-select: none;
+      height: 220px; /* 固定高さで左右を揃える */
+    }
+    .ba-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
     }
     .marker-layer {
       position: absolute;
@@ -539,9 +548,13 @@
     }
     .compare-side img {
       width: 100%;
-      height: 160px;
+      height: 200px;
       object-fit: cover;
+      object-position: center;
       border-radius: 8px;
+    }
+    .compare-side .no-photo {
+      height: 200px;
     }
     .compare-side .no-photo {
       width: 100%;
