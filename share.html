@@ -1091,10 +1091,10 @@
 
 <script>
 // ── データ管理（各端末ごとに独立したローカルDB）──
-let db = JSON.parse(localStorage.getItem('hairDB_share') || '{"clients":[],"records":[]}');
+let db = JSON.parse(localStorage.getItem('hairDB') || '{"clients":[],"records":[]}');
 
 function save() {
-  localStorage.setItem('hairDB_share', JSON.stringify(db));
+  localStorage.setItem('hairDB', JSON.stringify(db));
 }
 
 // ── スコアドット生成 ──
