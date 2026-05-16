@@ -641,27 +641,8 @@
       <button class="btn btn-secondary btn-sm" onclick="undoMarker()" style="margin-bottom:12px;">↩ 最後のマーカーを消す</button>
     </div>
 
-    <!-- AI自動分析ボタン -->
-    <div id="ai-analyze-area" style="display:none; margin-bottom:12px;">
-      <button class="btn btn-primary" onclick="analyzeWithAI()" id="ai-analyze-btn">
-        ✨ AIで変化を自動分析する
-      </button>
-      <p style="font-size:11px;color:#bbb;text-align:center;margin-top:6px;">
-        写真をAIが比較して注目ポイントを自動入力します
-      </p>
-    </div>
-  </div>
-
-  <!-- APIキー設定モーダル -->
-  <div id="apikey-modal" class="modal-overlay">
-    <div class="modal">
-      <div class="modal-handle"></div>
-      <h2 style="font-size:16px;font-weight:700;margin-bottom:8px;">🔑 Claude APIキー設定</h2>
-      <p style="font-size:12px;color:#888;margin-bottom:12px;">AI分析に必要です。一度入力すれば保存されます。</p>
-      <label>APIキー（sk-ant-...）</label>
-      <input type="password" id="apikey-input" placeholder="sk-ant-api03-..." style="font-size:13px;">
-      <button class="btn btn-primary" onclick="saveApiKey()" style="margin-bottom:8px;">保存して分析開始</button>
-      <button class="btn btn-secondary" onclick="closeApiKeyModal()">キャンセル</button>
+    <!-- 変化タグ選択 -->
+    <div id="change-tag-area" style="display:none; margin-bottom:4px;">
     </div>
   </div>
 
@@ -1467,93 +1448,61 @@ function printReport() {
   window.print();
 }
 
-// ── APIキー管理 ──
-function openApiKeyModal() {
-  const saved = localStorage.getItem('claudeApiKey') || '';
-  document.getElementById('apikey-input').value = saved;
-  document.getElementById('apikey-modal').classList.add('open');
-}
-function closeApiKeyModal() {
-  document.getElementById('apikey-modal').classList.remove('open');
-}
-function saveApiKey() {
-  const key = document.getElementById('apikey-input').value.trim();
-  if (!key) { alert('APIキーを入力してください'); return; }
-  localStorage.setItem('claudeApiKey', key);
-  closeApiKeyModal();
-  runAnalysis();
-}
+// ── 変化タグ選択パネル ──
+const CHANGE_TAGS = {
+  '🌱 育毛・発毛': [
+    'うぶ毛が増えてきた',
+    'ボリュームが出てきた',
+    '生え際が整ってきた',
+    '分け目が目立たなくなった',
+    '抜け毛が減った',
+  ],
+  '💆 頭皮': [
+    '頭皮がスッキリした',
+    '毛穴の詰まりが改善',
+    '頭皮の赤みが落ち着いた',
+    '油分バランスが整った',
+    'かゆみが落ち着いた',
+    '頭皮のニオイが改善',
+  ],
+  '✨ 髪質': [
+    'ツヤとハリが出た',
+    'パサつきが改善された',
+    'まとまりやすくなった',
+    '手触りがやわらかくなった',
+    '広がりが落ち着いた',
+    'しなやかさが増した',
+  ],
+};
 
-// ── AI分析 ──
-async function analyzeWithAI() {
-  const key = localStorage.getItem('claudeApiKey');
-  if (!key) { openApiKeyModal(); return; }
-  runAnalysis();
-}
+function renderChangeTagPanel() {
+  const area = document.getElementById('change-tag-area');
+  let html = `<div class="card">
+    <div class="card-title">✨ 注目ポイントを選ぶ</div>
+    <p style="font-size:12px;color:#aaa;margin-bottom:12px;">タップすると注目ポイントに追加されます</p>`;
 
-async function runAnalysis() {
-  const btn = document.getElementById('ai-analyze-btn');
-  btn.textContent = '🔄 分析中...';
-  btn.disabled = true;
-
-  try {
-    const beforeImg = document.getElementById('ba-before-img');
-    const afterImg  = document.getElementById('ba-after-img');
-
-    // base64からdata:image/xxx;base64, の部分を除去
-    const beforeB64 = beforeImg.src.split(',')[1];
-    const afterB64  = afterImg.src.split(',')[1];
-    const mimeType  = beforeImg.src.split(';')[0].split(':')[1] || 'image/jpeg';
-
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': localStorage.getItem('claudeApiKey'),
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: 'claude-opus-4-5',
-        max_tokens: 300,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: mimeType, data: beforeB64 } },
-            { type: 'image', source: { type: 'base64', media_type: mimeType, data: afterB64 } },
-            { type: 'text', text: '1枚目がBEFORE、2枚目がAFTERです。頭皮・髪の毛の変化を3つ、それぞれ20文字以内の日本語で答えてください。番号や記号は不要。改行区切りで3行だけ出力してください。' }
-          ]
-        }]
-      })
-    });
-
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error?.message || 'API エラー');
-    }
-
-    const data = await res.json();
-    const lines = data.content[0].text.trim().split('\n').filter(l => l.trim()).slice(0, 3);
-
-    // 既存のポイント行をクリアして自動入力
-    const list = document.getElementById('ba-points-list');
-    list.innerHTML = '';
-    baMarkers = [];
-    renderMarkers();
-
-    lines.forEach((line, i) => {
-      addPointRow(i + 1);
-      list.querySelectorAll('.point-input')[i].value = line.trim();
-    });
-
-    generateLine();
-    btn.textContent = '✅ 分析完了！再分析する';
-  } catch (e) {
-    alert('分析エラー: ' + e.message + '\nAPIキーを確認してください');
-    btn.textContent = '✨ AIで変化を自動分析する';
-  } finally {
-    btn.disabled = false;
+  for (const [cat, tags] of Object.entries(CHANGE_TAGS)) {
+    html += `<p style="font-size:12px;font-weight:700;color:#b5708a;margin-bottom:6px;">${cat}</p>
+    <div class="tags" style="margin-bottom:12px;">
+      ${tags.map(t => `<span class="tag change-suggest-tag" onclick="addChangeTag('${t}')">${t}</span>`).join('')}
+    </div>`;
   }
+  html += `</div>`;
+  area.innerHTML = html;
+}
+
+function addChangeTag(text) {
+  const list = document.getElementById('ba-points-list');
+  const count = list.querySelectorAll('.point-row').length;
+  if (count >= 5) { alert('最大5つまでです'); return; }
+  addPointRow(count + 1);
+  const inputs = list.querySelectorAll('.point-input');
+  inputs[inputs.length - 1].value = text;
+  generateLine();
+  // 選んだタグをグレーアウト
+  document.querySelectorAll('.change-suggest-tag').forEach(el => {
+    if (el.textContent === text) el.style.opacity = '0.35';
+  });
 }
 
 // ── BA作成機能 ──
@@ -1581,7 +1530,8 @@ function loadBAPhoto(side, input) {
       document.getElementById('ba-points-card').style.display = 'block';
       document.getElementById('ba-line-card').style.display   = 'block';
       document.getElementById('ba-generate-area').style.display = 'block';
-      document.getElementById('ai-analyze-area').style.display = 'block';
+      renderChangeTagPanel();
+      document.getElementById('change-tag-area').style.display = 'block';
       generateLine();
     }
   };
