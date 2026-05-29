@@ -567,9 +567,76 @@
       color: #ccc;
       font-size: 36px;
     }
+
+  /* ── PIN オーバーレイ ── */
+  #pin-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: #fdf5f8;
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity 0.4s;
+  }
+  #pin-overlay.fade-out { opacity: 0; pointer-events: none; }
+  #pin-box {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 24px rgba(181,112,138,0.18);
+    padding: 32px 28px 28px;
+    width: 300px;
+    text-align: center;
+  }
+  .pin-logo { font-size: 40px; margin-bottom: 12px; }
+  #pin-title { font-size: 18px; font-weight: 700; color: #b5708a; margin-bottom: 6px; }
+  #pin-subtitle { font-size: 12px; color: #aaa; margin-bottom: 20px; }
+  #pin-dots { display: flex; justify-content: center; gap: 14px; margin-bottom: 8px; }
+  #pin-dots .dot {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid #e8a8c0; background: white; transition: background 0.15s;
+  }
+  #pin-dots .dot.filled { background: #b5708a; border-color: #b5708a; }
+  #pin-error { font-size: 12px; color: #e05a7a; min-height: 18px; margin-bottom: 8px; }
+  #pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+  .pin-btn {
+    padding: 16px 0; border: none; border-radius: 12px;
+    font-size: 20px; font-weight: 600; cursor: pointer;
+    background: #fde8f0; color: #b5708a; transition: background 0.15s, transform 0.1s;
+  }
+  .pin-btn:active { background: #e8a8c0; transform: scale(0.95); }
+  .pin-btn.del { font-size: 16px; background: #f5f5f5; color: #999; }
+  .pin-btn.empty { background: transparent; cursor: default; }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 60%{transform:translateX(8px)}
+  }
+  #pin-dots.shake { animation: shake 0.4s; }
   </style>
 </head>
 <body>
+
+<div id="pin-overlay">
+  <div id="pin-box">
+    <div class="pin-logo">🌿</div>
+    <h2 id="pin-title">PINを入力</h2>
+    <p id="pin-subtitle">4桁のPINを入力してください</p>
+    <div id="pin-dots">
+      <span class="dot"></span><span class="dot"></span>
+      <span class="dot"></span><span class="dot"></span>
+    </div>
+    <div id="pin-error"></div>
+    <div id="pin-pad">
+      <button class="pin-btn pin-num" data-n="1">1</button>
+      <button class="pin-btn pin-num" data-n="2">2</button>
+      <button class="pin-btn pin-num" data-n="3">3</button>
+      <button class="pin-btn pin-num" data-n="4">4</button>
+      <button class="pin-btn pin-num" data-n="5">5</button>
+      <button class="pin-btn pin-num" data-n="6">6</button>
+      <button class="pin-btn pin-num" data-n="7">7</button>
+      <button class="pin-btn pin-num" data-n="8">8</button>
+      <button class="pin-btn pin-num" data-n="9">9</button>
+      <button class="pin-btn empty" disabled></button>
+      <button class="pin-btn pin-num" data-n="0">0</button>
+      <button class="pin-btn del" id="pin-del">⌫</button>
+    </div>
+  </div>
+</div>
 
 <header>
   <div>
@@ -1820,6 +1887,53 @@ function init() {
 }
 
 window.onload = init;
+
+// ── PIN ロック ──
+(function(){
+  const KEY = 'hairAppPIN';
+  let input = '', first = '';
+  let mode = localStorage.getItem(KEY) ? 'unlock' : 'setup_first';
+  function dots() {
+    document.querySelectorAll('#pin-dots .dot').forEach((d,i) => d.classList.toggle('filled', i < input.length));
+  }
+  function title() {
+    const t = document.getElementById('pin-title'), s = document.getElementById('pin-subtitle');
+    if (mode==='setup_first')   { t.textContent='新しいPINを設定'; s.textContent='4桁のPINを入力してください'; }
+    else if (mode==='setup_confirm') { t.textContent='PINを確認'; s.textContent='もう一度入力してください'; }
+    else { t.textContent='PINを入力'; s.textContent='4桁のPINを入力してください'; }
+  }
+  function showError(msg) {
+    document.getElementById('pin-error').textContent = msg;
+    const d = document.getElementById('pin-dots');
+    d.classList.add('shake');
+    setTimeout(() => { d.classList.remove('shake'); document.getElementById('pin-error').textContent=''; }, 1500);
+  }
+  function unlock() {
+    const o = document.getElementById('pin-overlay');
+    o.classList.add('fade-out');
+    setTimeout(() => o.remove(), 400);
+  }
+  function check() {
+    if (mode==='setup_first') {
+      first = input; input = ''; mode = 'setup_confirm'; title(); dots();
+    } else if (mode==='setup_confirm') {
+      if (input===first) { localStorage.setItem(KEY, input); unlock(); }
+      else { showError('PINが一致しません。最初からやり直してください'); input=''; first=''; mode='setup_first'; title(); dots(); }
+    } else {
+      if (input===localStorage.getItem(KEY)) { unlock(); }
+      else { showError('PINが違います'); input=''; dots(); }
+    }
+  }
+  window.addEventListener('DOMContentLoaded', function(){
+    title();
+    document.querySelectorAll('.pin-num').forEach(b => b.addEventListener('click', () => {
+      if (input.length>=4) return;
+      input += b.dataset.n; dots();
+      if (input.length===4) setTimeout(check, 200);
+    }));
+    document.getElementById('pin-del').addEventListener('click', () => { input=input.slice(0,-1); dots(); });
+  });
+})();
 </script>
 </body>
 </html>
