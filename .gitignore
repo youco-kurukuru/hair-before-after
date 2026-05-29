@@ -1,0 +1,15 @@
+# Claude Code設定（APIキー等を含む可能性があるため除外）
+.claude/
+
+# 環境変数・APIキー
+.env
+.env.local
+.env.*
+
+# 個人データ・顧客情報
+*.csv
+*_data.json
+customers.json
+
+# macOSシステムファイル
+.DS_Store
