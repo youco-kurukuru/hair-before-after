@@ -486,11 +486,22 @@
 
   function goStep1() {
     const email = document.getElementById('email-input').value;
-    // Googleフォームにメールアドレスを送信（no-cors）
-    const formUrl = 'https://docs.google.com/forms/u/0/d/e/1FAIpQLSdR68zlVmWyLkXyp2w3gsjtyl-uA2axHXwchQzXVwMpJXddVA/formResponse';
-    const body = new FormData();
-    body.append('entry.509266038', email);
-    fetch(formUrl, { method: 'POST', mode: 'no-cors', body }).catch(() => {});
+    // hiddenフォームでGoogleフォームに送信
+    const iframe = document.createElement('iframe');
+    iframe.name = 'hidden-iframe';
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'https://docs.google.com/forms/u/0/d/e/1FAIpQLSdR68zlVmWyLkXyp2w3gsjtyl-uA2axHXwchQzXVwMpJXddVA/formResponse';
+    form.target = 'hidden-iframe';
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'entry.509266038';
+    input.value = email;
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
 
     document.getElementById('screen-start').style.display = 'none';
     document.getElementById('screen-q1').style.display = 'block';
