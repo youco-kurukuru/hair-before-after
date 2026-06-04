@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>くるくる髪育®︎診断書</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+      background: #fdf5f8;
+      color: #333;
+      min-height: 100vh;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #e8a8c0, #fde4ee);
+      color: white;
+      padding: 20px 16px;
+      text-align: center;
+    }
+    .header-icon { font-size: 28px; margin-bottom: 6px; }
+    .header h1 { font-size: 19px; font-weight: bold; line-height: 1.4; }
+    .header p { font-size: 12px; opacity: 0.9; margin-top: 4px; }
+
+    .content { padding: 24px 16px; max-width: 480px; margin: 0 auto; }
+
+    /* ステップバッジ */
+    .step-badge {
+      display: inline-block;
+      background: #e8a8c0;
+      color: white;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 4px 10px;
+      border-radius: 20px;
+      margin-bottom: 8px;
+    }
+
+    /* スタート画面 */
+    #screen-start .main-icon { font-size: 60px; text-align: center; margin: 16px 0; }
+    #screen-start h2 {
+      font-size: 21px; font-weight: bold; color: #b5708a;
+      text-align: center; line-height: 1.5; margin-bottom: 16px;
+    }
+    #screen-start p { font-size: 14px; line-height: 1.9; margin-bottom: 16px; }
+
+    .hint-box {
+      background: #fdf5f8;
+      border-left: 4px solid #e8a8c0;
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    .hint-box .hint-title { color: #e8a8c0; font-weight: bold; margin-bottom: 6px; }
+
+    .email-section {
+      background: #fdf5f8;
+      border: 1px solid #f0d8e8;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .email-section .email-title { font-size: 14px; font-weight: bold; color: #b5708a; margin-bottom: 4px; }
+    .email-section p { font-size: 12px; color: #888; margin-bottom: 10px; }
+    .email-section input {
+      width: 100%; padding: 12px; border: 1px solid #ddd;
+      border-radius: 8px; font-size: 15px; outline: none;
+    }
+    .email-section input:focus { border-color: #e8a8c0; }
+
+    /* ボタン */
+    .btn-primary {
+      display: block; width: 100%; padding: 16px;
+      background: linear-gradient(135deg, #e8a8c0, #b5708a);
+      color: white; border: none; border-radius: 30px;
+      font-size: 17px; font-weight: bold; cursor: pointer;
+      text-align: center; box-shadow: 0 4px 12px rgba(160,82,45,0.3);
+    }
+    .btn-primary:active { transform: scale(0.98); }
+
+    /* 質問画面 */
+    #screen-q1, #screen-q2, #screen-q3 { display: none; }
+
+    .progress-bar {
+      background: #fde8f0; border-radius: 10px; height: 8px;
+      margin-bottom: 6px; overflow: hidden;
+    }
+    .progress-fill {
+      background: linear-gradient(90deg, #e8a8c0, #fde4ee);
+      height: 100%; border-radius: 10px; transition: width 0.4s ease;
+    }
+    .progress-text { font-size: 11px; color: #aaa; margin-bottom: 20px; text-align: right; }
+
+    .question-box {
+      background: white; border-radius: 16px; padding: 20px;
+      margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .question-text { font-size: 16px; font-weight: bold; line-height: 1.7; }
+    .question-sub { font-size: 13px; color: #888; margin-top: 6px; line-height: 1.6; }
+
+    .choices { display: flex; flex-direction: column; gap: 10px; }
+    .choice-btn {
+      padding: 14px 16px; border: 2px solid #fde8f0;
+      border-radius: 12px; background: white;
+      font-size: 14px; text-align: left; cursor: pointer;
+      transition: all 0.2s; line-height: 1.5;
+    }
+    .choice-btn:active, .choice-btn.selected {
+      border-color: #e8a8c0; background: #fde8f0;
+      color: #b5708a; font-weight: bold;
+    }
+
+    /* チェックボックス式 */
+    .check-choices { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .check-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px; border: 2px solid #fde8f0;
+      border-radius: 12px; background: white; cursor: pointer;
+      transition: all 0.2s; font-size: 14px;
+    }
+    .check-item.checked { border-color: #e8a8c0; background: #fde8f0; color: #b5708a; font-weight: bold; }
+    .check-box {
+      width: 22px; height: 22px; border: 2px solid #ddd;
+      border-radius: 6px; flex-shrink: 0; display: flex;
+      align-items: center; justify-content: center; font-size: 14px;
+    }
+    .check-item.checked .check-box { background: #e8a8c0; border-color: #e8a8c0; color: white; }
+
+    .btn-next {
+      display: block; width: 100%; padding: 15px;
+      background: linear-gradient(135deg, #e8a8c0, #b5708a);
+      color: white; border: none; border-radius: 30px;
+      font-size: 16px; font-weight: bold; cursor: pointer;
+      box-shadow: 0 4px 12px rgba(160,82,45,0.3);
+    }
+    .btn-next:disabled { background: #ddd; box-shadow: none; color: #aaa; }
+
+    /* 結果画面 */
+    #screen-result { display: none; }
+
+    .result-header { text-align: center; padding: 20px 0 10px; }
+    .result-icon { font-size: 58px; margin-bottom: 10px; }
+    .result-label { font-size: 13px; color: #888; margin-bottom: 6px; }
+    .result-type { font-size: 22px; font-weight: bold; color: #b5708a; line-height: 1.4; margin-bottom: 8px; }
+    .result-tagline { font-size: 13px; color: #888; line-height: 1.6; }
+
+    .result-card {
+      background: white; border-radius: 16px; padding: 18px;
+      margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .result-card h3 { font-size: 14px; font-weight: bold; color: #e8a8c0; margin-bottom: 10px; }
+    .result-card p { font-size: 14px; line-height: 1.8; }
+    .result-card ul { padding-left: 18px; font-size: 14px; line-height: 2.1; }
+
+    .dream-box {
+      background: linear-gradient(135deg, #fdf5f8, #ffeedd);
+      border: 1px solid #f0d8e8; border-radius: 16px;
+      padding: 16px; margin-bottom: 14px;
+    }
+    .dream-box .dream-label { font-size: 12px; color: #e8a8c0; font-weight: bold; margin-bottom: 6px; }
+    .dream-box .dream-text { font-size: 15px; font-weight: bold; color: #333; line-height: 1.6; }
+
+    .cta-box {
+      background: linear-gradient(135deg, #fde8f0, #ffe8d8);
+      border: 1px solid #f0d8e8; border-radius: 16px;
+      padding: 20px; text-align: center; margin-bottom: 20px;
+    }
+    .cta-box p { font-size: 14px; line-height: 1.9; margin-bottom: 14px; }
+    .cta-name { font-weight: bold; color: #b5708a; }
+
+    .btn-line {
+      display: block; width: 100%; padding: 16px;
+      background: #06C755; color: white; border: none;
+      border-radius: 30px; font-size: 16px; font-weight: bold;
+      cursor: pointer; margin-bottom: 12px;
+      box-shadow: 0 4px 12px rgba(6,199,85,0.3);
+    }
+    .btn-retry {
+      display: block; width: 100%; padding: 14px;
+      background: white; color: #b5708a;
+      border: 2px solid #e8a8c0; border-radius: 30px;
+      font-size: 15px; cursor: pointer; text-align: center;
+    }
+
+    /* トランジション */
+    .screen { animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">🌿</div>
+  <h1>くるくる髪育®︎診断書</h1>
+  <p>あなたの原因を正しく知って、正しいケアを</p>
+</div>
+
+<div class="content">
+
+  <!-- ===== スタート画面 ===== -->
+  <div id="screen-start" class="screen">
+    <div class="main-icon">👩</div>
+    <h2>あなたの頭皮タイプを<br>チェックしてみましょう</h2>
+    <p>
+      抜け毛・薄毛の原因は人によって違います。<br>
+      <strong>敏感型・皮脂過多型・育毛不足型</strong>の3タイプから、あなたに合った本当のケアを見つけましょう✨
+    </p>
+
+    <div class="hint-box">
+      <div class="hint-title">📝 回答のポイント</div>
+      <strong>ここ1〜2年の自分の状態</strong>を思い出して答えてください。<br>
+      正直に答えるほど、診断精度が上がります。
+    </div>
+
+    <div class="email-section">
+      <div class="email-title">📧 診断結果をメールで受け取る</div>
+      <p>メールアドレスを入力すると、診断結果をお届けします。</p>
+      <input type="email" id="email-input" placeholder="example@gmail.com">
+    </div>
+
+    <button class="btn-primary" onclick="goStep1()">診断をはじめる →</button>
+  </div>
+
+  <!-- ===== STEP1：現状（悩み）の把握 ===== -->
+  <div id="screen-q1" class="screen">
+    <div class="step-badge">STEP 1｜現状の悩みを教えてください</div>
+    <div class="progress-bar"><div class="progress-fill" style="width:25%"></div></div>
+    <div class="progress-text">1 / 4</div>
+
+    <div class="question-box">
+      <div class="question-text">今、頭皮や髪で気になっていることをすべて選んでください</div>
+      <div class="question-sub">当てはまるものをすべてチェック（複数OK）</div>
+    </div>
+
+    <div class="check-choices" id="q1-checks">
+      <div class="check-item" data-val="A1" onclick="toggleCheck(this)">
+        <div class="check-box">✓</div>頭皮がかゆい・ピリピリする
+      </div>
+      <div class="check-item" data-val="A2" onclick="toggleCheck(this)">
+        <div class="check-box">✓</div>頭皮がカサつく・乾燥している
+      </div>
+      <div class="check-item" data-val="B1" onclick="toggleCheck(this)">
+        <div class="check-box">✓</div>頭皮が匂う・ベタベタする
+      </div>
+      <div class="check-item" data-val="B2" onclick="toggleCheck(this)">
+        <div class="check-box">✓</div>すぐにペタっとしてボリュームがなくなる
+      </div>
+      <div class="check-item" data-val="C1" onclick="toggleCheck(this)">
+        <div class="check-box">✓</div>抜け毛が増えた・排水口に多く落ちる
+      </div>
+      <div class="check-item" data-val="C2" onclick="toggleCheck(this)">
+        <div class="check-box">✓</div>髪の量が減った・つむじが目立つ
+      </div>
+      <div class="check-item" data-val="C3" onclick="toggleCheck(this)">
+        <div class="check-box">✓</div>髪が細くなった・コシがなくなった
+      </div>
+    </div>
+
+    <button class="btn-next" id="btn-q1-next" onclick="goStep2()" disabled>次へ →</button>
+  </div>
+
+  <!-- ===== STEP2：原因の深掘り ===== -->
+  <div id="screen-q2" class="screen">
+    <div class="step-badge">STEP 2｜原因を深掘りします</div>
+    <div class="progress-bar"><div class="progress-fill" style="width:50%"></div></div>
+    <div class="progress-text">2 / 4</div>
+
+    <div id="q2-container"></div>
+  </div>
+
+  <!-- ===== STEP3：理想の未来 ===== -->
+  <div id="screen-q3" class="screen">
+    <div class="step-badge">STEP 3｜理想の未来を教えてください</div>
+    <div class="progress-bar"><div class="progress-fill" style="width:75%"></div></div>
+    <div class="progress-text">3 / 4</div>
+
+    <div class="question-box">
+      <div class="question-text">髪と頭皮のケアがうまくいったら、一番したいことは何ですか？</div>
+      <div class="question-sub">あなたの「なりたい未来」を選んでください</div>
+    </div>
+
+    <div class="choices">
+      <button class="choice-btn" onclick="selectDream('hair', this)">✨ ふんわりボリュームのある髪に戻りたい</button>
+      <button class="choice-btn" onclick="selectDream('style', this)">💇 好きなヘアスタイルを楽しめるようになりたい</button>
+      <button class="choice-btn" onclick="selectDream('confidence', this)">🪞 鏡を見るのが怖くなくなりたい</button>
+      <button class="choice-btn" onclick="selectDream('health', this)">🌿 頭皮から体全体を健康にしたい</button>
+      <button class="choice-btn" onclick="selectDream('family', this)">👨‍👩‍👧 家族や友人に「きれいになった」と言われたい</button>
+    </div>
+  </div>
+
+  <!-- ===== STEP4：診断結果 ===== -->
+  <div id="screen-result" class="screen">
+    <div class="step-badge">STEP 4｜あなたの診断結果</div>
+
+    <div class="result-header">
+      <div class="result-icon" id="result-icon"></div>
+      <div class="result-label">あなたの頭皮タイプは</div>
+      <div class="result-type" id="result-type"></div>
+      <div class="result-tagline" id="result-tagline"></div>
+    </div>
+
+    <div class="dream-box">
+      <div class="dream-label">🌸 あなたの目標</div>
+      <div class="dream-text" id="dream-display"></div>
+    </div>
+
+    <div class="result-card">
+      <h3>🔍 あなたの頭皮の状態</h3>
+      <p id="result-desc"></p>
+    </div>
+
+    <div class="result-card">
+      <h3>✅ 今すぐ始めたいケア</h3>
+      <ul id="result-care"></ul>
+    </div>
+
+    <div class="result-card">
+      <h3>⚠️ やってはいけないこと</h3>
+      <p id="result-ng"></p>
+    </div>
+
+    <div class="cta-box">
+      <p>
+        <span class="cta-name">髪育サロン®︎くるくる</span>では、あなたの頭皮の現状をみながら<br>
+        <strong>１日たった３分でできる、髪が育つご自宅での正しいシャンプーの仕方</strong>と<br>
+        髪を育てるために大切なことをお伝えしています。<br><br>
+        抜け毛や薄毛にお悩みの方は<strong>「相談」</strong>とメッセージを送ってください。<br>
+        オンラインでも相談可です😊
+      </p>
+      <button class="btn-line" onclick="addLine()">💬 「相談」とメッセージを送る</button>
+      <button class="btn-retry" onclick="retry()">もう一度診断する</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ===== 状態 =====
+  let scores = { A: 0, B: 0, C: 0 };
+  let dreamText = "";
+  let q2Answers = {};
+  let q2Index = 0;
+
+  // ===== STEP2の質問（タイプ別） =====
+  const q2Questions = {
+    A: [
+      {
+        id: "a1",
+        text: "頭皮のかゆみやカサつきはいつ頃から気になりますか？",
+        choices: [
+          { label: "45歳以降から急に気になり始めた", score: { A: 2 } },
+          { label: "もともと敏感肌で昔から", score: { A: 1 } },
+          { label: "最近の生活の変化と同時に", score: { A: 1, C: 1 } }
+        ]
+      }
+    ],
+    B: [
+      {
+        id: "b1",
+        text: "シャンプー後、どのくらいでべたつきが気になりますか？",
+        choices: [
+          { label: "当日中にすでにべたつく", score: { B: 2 } },
+          { label: "翌朝にはべたっとしている", score: { B: 1 } },
+          { label: "2日目から気になる", score: { B: 1 } }
+        ]
+      }
+    ],
+    C: [
+      {
+        id: "c1",
+        text: "睡眠と食事の状態はどうですか？",
+        choices: [
+          { label: "睡眠が浅い・食事も偏りがち", score: { C: 2 } },
+          { label: "どちらか一方が乱れている", score: { C: 1 } },
+          { label: "規則正しく生活できている", score: { C: 0 } }
+        ]
+      },
+      {
+        id: "c2",
+        text: "シャンプーの頻度はどのくらいですか？",
+        choices: [
+          { label: "2〜3日に1回、または一日おき", score: { C: 2 } },
+          { label: "毎日洗っているが、さっと洗うだけ", score: { C: 1 } },
+          { label: "毎晩しっかり洗っている", score: { C: 0 } }
+        ]
+      }
+    ],
+    common: [
+      {
+        id: "cm1",
+        text: "育毛剤やスカルプシャンプーをこれまでに試したことはありますか？",
+        choices: [
+          { label: "何種類も試したが効果を感じなかった", score: { C: 1 } },
+          { label: "少し試したことがある", score: {} },
+          { label: "まだ試していない", score: {} }
+        ]
+      },
+      {
+        id: "cm2",
+        text: "肩こりや手足の冷えを感じることはありますか？",
+        choices: [
+          { label: "毎日ひどい", score: { C: 2 } },
+          { label: "時々感じる", score: { C: 1 } },
+          { label: "ほとんどない", score: {} }
+        ]
+      }
+    ]
+  };
+
+  // ===== 結果データ =====
+  const results = {
+    A: {
+      icon: "🌸",
+      type: "敏感型",
+      tagline: "頭皮が刺激に過敏になっています",
+      desc: "頭皮の皮膚バリアが弱まり、外部刺激（汗・乾燥・シャンプー成分）に敏感になっています。ホルモンバランスの変化も影響していることが多く、育毛剤をすぐ試す前に、まず「頭皮を落ち着かせる」ことが先決です。",
+      care: [
+        "低刺激・無添加のシャンプーに切り替える",
+        "シャンプーは38〜40℃のぬるめのお湯で洗う",
+        "頭皮用化粧水を朝晩、髪をかき分けて塗布する",
+        "タオルでゴシゴシこすらず、優しく押さえる"
+      ],
+      ng: "熱いお湯でのシャンプー・香料の強いヘアケア用品・かきむしりはNGです。刺激が炎症を悪化させます。"
+    },
+    B: {
+      icon: "💧",
+      type: "皮脂過多型",
+      tagline: "毛穴に余分な皮脂が詰まっています",
+      desc: "頭皮の余分な皮脂や角質が毛穴に詰まり、酸化することで匂いやべたつきの原因になっています。毛穴が詰まると髪の成長が妨げられ、抜け毛にも繋がります。シャンプー法の見直しが最優先です。",
+      care: [
+        "シャンプー前にブラッシングで汚れを浮かせる",
+        "指の腹でやさしく、頭皮全体をしっかり洗う（爪立て禁止）",
+        "すすぎを丁寧に、洗い残しゼロを意識する",
+        "毎晩シャンプーして、清潔な頭皮で眠りにつく"
+      ],
+      ng: "「べたつくから」と一日おきのシャンプーにするのはNGです。皮脂が酸化してさらに悪化します。"
+    },
+    C: {
+      icon: "🌱",
+      type: "育毛不足型",
+      tagline: "髪の毛根に栄養が届いていません",
+      desc: "ストレス・睡眠不足・食事の乱れにより、血行が悪化し、髪をつくる工場（毛根）に栄養が届きにくくなっています。正しいシャンプーで血流を促進し、栄養を頭頂部まで届けることが回復の第一歩です。",
+      care: [
+        "毎晩正しいシャンプーで頭皮の血行を促進する",
+        "鉄分・亜鉛・タンパク質を意識した食事をとる（赤身肉・大豆・牡蠣）",
+        "シャンプー時のマッサージで頭頂部まで血を巡らせる",
+        "睡眠を最低6時間確保し、成長ホルモンを出す"
+      ],
+      ng: "抜け毛が気になるからと、シャンプーを一日おきにするのはNGです！抜け毛があるときこそ毎日正しく洗いましょう。"
+    }
+  };
+
+  const dreamLabels = {
+    hair: "ふんわりボリュームのある髪に戻りたい",
+    style: "好きなヘアスタイルを楽しめるようになりたい",
+    confidence: "鏡を見るのが怖くなくなりたい",
+    health: "頭皮から体全体を健康にしたい",
+    family: "家族や友人に「きれいになった」と言われたい"
+  };
+
+  // ===== チェックボックス =====
+  function toggleCheck(el) {
+    el.classList.toggle('checked');
+    const any = document.querySelectorAll('.check-item.checked').length > 0;
+    document.getElementById('btn-q1-next').disabled = !any;
+  }
+
+  // ===== STEP1 → STEP2 =====
+  function goStep1() {
+    document.getElementById('screen-start').style.display = 'none';
+    document.getElementById('screen-q1').style.display = 'block';
+    window.scrollTo(0, 0);
+  }
+
+  function goStep2() {
+    // スコア集計
+    scores = { A: 0, B: 0, C: 0 };
+    document.querySelectorAll('.check-item.checked').forEach(el => {
+      const val = el.dataset.val;
+      if (val.startsWith('A')) scores.A++;
+      if (val.startsWith('B')) scores.B++;
+      if (val.startsWith('C')) scores.C++;
+    });
+
+    // STEP2の質問を組み立て
+    let q2List = [...q2Questions.common];
+    if (scores.A > 0) q2List = [...q2Questions.A, ...q2List];
+    if (scores.B > 0) q2List = [...q2Questions.B, ...q2List];
+    if (scores.C > 0) q2List = [...q2Questions.C, ...q2List];
+
+    window._q2List = q2List;
+    q2Index = 0;
+    q2Answers = {};
+
+    document.getElementById('screen-q1').style.display = 'none';
+    document.getElementById('screen-q2').style.display = 'block';
+    renderQ2();
+    window.scrollTo(0, 0);
+  }
+
+  function renderQ2() {
+    const q = window._q2List[q2Index];
+    const total = window._q2List.length;
+    const container = document.getElementById('q2-container');
+    container.innerHTML = `
+      <div class="question-box">
+        <div class="question-text">${q.text}</div>
+      </div>
+      <div class="choices" id="q2-choices">
+        ${q.choices.map((c, i) => `
+          <button class="choice-btn" onclick="selectQ2(${i})">${c.label}</button>
+        `).join('')}
+      </div>
+    `;
+    // プログレス更新
+    const prog = Math.round(((q2Index + 1) / total) * 100);
+    document.querySelector('#screen-q2 .progress-fill').style.width = (25 + prog * 0.25) + '%';
+    document.querySelector('#screen-q2 .progress-text').textContent = `2 / 4（${q2Index + 1}/${total}問）`;
+  }
+
+  function selectQ2(i) {
+    const q = window._q2List[q2Index];
+    const score = q.choices[i].score;
+    for (const [k, v] of Object.entries(score)) {
+      if (scores[k] !== undefined) scores[k] += v;
+    }
+    q2Answers[q.id] = i;
+
+    document.querySelectorAll('#q2-choices .choice-btn')[i].classList.add('selected');
+
+    setTimeout(() => {
+      q2Index++;
+      if (q2Index < window._q2List.length) {
+        renderQ2();
+      } else {
+        document.getElementById('screen-q2').style.display = 'none';
+        document.getElementById('screen-q3').style.display = 'block';
+        window.scrollTo(0, 0);
+      }
+    }, 400);
+  }
+
+  // ===== STEP3 → STEP4 =====
+  function selectDream(key, btn) {
+    dreamText = dreamLabels[key];
+    document.querySelectorAll('#screen-q3 .choice-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    setTimeout(() => showResult(), 400);
+  }
+
+  // ===== 結果表示 =====
+  function showResult() {
+    const topType = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
+    const r = results[topType];
+
+    document.getElementById('screen-q3').style.display = 'none';
+    document.getElementById('screen-result').style.display = 'block';
+
+    document.getElementById('result-icon').textContent = r.icon;
+    document.getElementById('result-type').textContent = r.type;
+    document.getElementById('result-tagline').textContent = r.tagline;
+    document.getElementById('result-desc').textContent = r.desc;
+    document.getElementById('result-ng').textContent = r.ng;
+    document.getElementById('dream-display').textContent = '「' + dreamText + '」';
+    document.getElementById('result-care').innerHTML = r.care.map(c => `<li>${c}</li>`).join('');
+
+    window.scrollTo(0, 0);
+  }
+
+  // ===== LINE =====
+  function addLine() {
+    // youcoさんのLINE公式アカウントURLに変更してください
+    window.open('https://lin.ee/ObKrSdg', '_blank');
+  }
+
+  function retry() {
+    document.getElementById('screen-result').style.display = 'none';
+    document.getElementById('screen-start').style.display = 'block';
+    scores = { A: 0, B: 0, C: 0 };
+    dreamText = "";
+    window.scrollTo(0, 0);
+  }
+
+  // LIFF初期化
+  async function initLiff() {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const liffId = urlParams.get('liffId');
+      if (liffId) await liff.init({ liffId });
+    } catch(e) {}
+  }
+  initLiff();
+</script>
+</body>
+</html>
