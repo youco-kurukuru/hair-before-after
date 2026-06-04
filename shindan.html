@@ -589,8 +589,8 @@
   async function initLiff() {
     try {
       const urlParams = new URLSearchParams(window.location.search);
-      const liffId = urlParams.get('liffId');
-      if (liffId) await liff.init({ liffId });
+      const liffId = urlParams.get('liffId') || '2010291933-5IpSX35w';
+      await liff.init({ liffId });
     } catch(e) {}
   }
   initLiff();
