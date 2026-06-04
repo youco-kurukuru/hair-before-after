@@ -480,6 +480,13 @@
   }
 
   function goStep1() {
+    const email = document.getElementById('email-input').value;
+    // Googleフォームにメールアドレスを送信（no-cors）
+    const formUrl = 'https://docs.google.com/forms/u/0/d/e/1FAIpQLSdR68zlVmWyLkXyp2w3gsjtyl-uA2axHXwchQzXVwMpJXddVA/formResponse';
+    const body = new FormData();
+    body.append('entry.509266038', email);
+    fetch(formUrl, { method: 'POST', mode: 'no-cors', body }).catch(() => {});
+
     document.getElementById('screen-start').style.display = 'none';
     document.getElementById('screen-q1').style.display = 'block';
     window.scrollTo(0, 0);
