@@ -486,22 +486,13 @@
 
   function goStep1() {
     const email = document.getElementById('email-input').value;
-    // hiddenフォームでGoogleフォームに送信
-    const iframe = document.createElement('iframe');
-    iframe.name = 'hidden-iframe';
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = 'https://docs.google.com/forms/d/e/1FAIpQLSdR68zlVmWyLkXyp2w3gsjtyl-uA2axHXwchQzXVwMpJXddVA/formResponse';
-    form.target = 'hidden-iframe';
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'entry.509266038';
-    input.value = email;
-    form.appendChild(input);
-    document.body.appendChild(form);
-    form.submit();
+    // GAS WebアプリにPOSTしてスプレッドシートに保存
+    fetch('https://script.google.com/macros/s/AKfycbz61YK1o0LGKUQ14SoyKUVC8whxxbKI9rjgcT8iipaumtyeoZe9mGOo5lprei2o3kAmCw/exec', {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'email=' + encodeURIComponent(email)
+    }).catch(() => {});
 
     document.getElementById('screen-start').style.display = 'none';
     document.getElementById('screen-q1').style.display = 'block';
