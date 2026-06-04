@@ -219,10 +219,10 @@
     <div class="email-section">
       <div class="email-title">📧 診断結果をメールで受け取る</div>
       <p>メールアドレスを入力すると、診断結果をお届けします。</p>
-      <input type="email" id="email-input" placeholder="example@gmail.com">
+      <input type="email" id="email-input" placeholder="example@gmail.com" oninput="checkEmail()">
     </div>
 
-    <button class="btn-primary" onclick="goStep1()">診断をはじめる →</button>
+    <button class="btn-primary" id="btn-start" onclick="goStep1()" disabled style="opacity:0.5;cursor:not-allowed;">診断をはじめる →</button>
   </div>
 
   <!-- ===== STEP1：現状（悩み）の把握 ===== -->
@@ -470,6 +470,15 @@
   }
 
   // ===== STEP1 → STEP2 =====
+  function checkEmail() {
+    const email = document.getElementById('email-input').value;
+    const btn = document.getElementById('btn-start');
+    const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    btn.disabled = !valid;
+    btn.style.opacity = valid ? '1' : '0.5';
+    btn.style.cursor = valid ? 'pointer' : 'not-allowed';
+  }
+
   function goStep1() {
     document.getElementById('screen-start').style.display = 'none';
     document.getElementById('screen-q1').style.display = 'block';
