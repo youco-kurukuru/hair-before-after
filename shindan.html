@@ -486,9 +486,11 @@
 
   function goStep1() {
     const email = document.getElementById('email-input').value;
-    // GAS WebアプリにGETでメアドを送信
+    // GAS WebアプリにGETでメアドを送信（script tag方式でSafari対応）
     const gasUrl = 'https://script.google.com/macros/s/AKfycbz61YK1o0LGKUQ14SoyKUVC8whxxbKI9rjgcT8iipaumtyeoZe9mGOo5lprei2o3kAmCw/exec?email=' + encodeURIComponent(email);
-    new Image().src = gasUrl;
+    const script = document.createElement('script');
+    script.src = gasUrl;
+    document.body.appendChild(script);
 
     document.getElementById('screen-start').style.display = 'none';
     document.getElementById('screen-q1').style.display = 'block';
